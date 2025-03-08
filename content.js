@@ -31,6 +31,9 @@ let finalTextElement;
 /** @type {HTMLElement | null} */
 let basicInfoElement;
 
+// 追加ステータスとキャラ情報の監視オブジェクト
+let subPropsElementObserve, basicInfoElementObserve;
+
 document.addEventListener('DOMContentLoaded', () => {
     // 要素取得
     function waitForElement(selector) {
@@ -55,6 +58,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 reject(new Error(`Timeout: 要素 ${selector} が見つかりませんでした`));
             }, 10000);  // タイムアウト時間を調整
         });
+    }
+
+
+
+    // 監視のコールバック
+    const callback = (mutationsList, observer) => {
+        for (let mutation of mutationsList) {
+            if (mutation.target.id === MY_ID) {
+                continue;
+            }
+            if(observer === subPropsElementObserve){
+                console.log('追加ステータスの変更を検知したので再描画');
+            } else if(observer === basicInfoElementObserve){
+                console.log('キャラ情報の変更を検知したので再描画');
+            }
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                console.log('要素が変更されたので再描画');
+                console.log(`変更された要素:`, mutation.target);
+                console.log(`変更された属性:`, mutation.attributeName);
+                reDraw();
+            }
+        }
+    };
+
+    // 監視するオプション（設定）
+    const config = {
+        childList: true,            // 子要素の追加・削除を監視
+        attributes: true,           // 属性の変更を監視
+        subtree: true,              // 子孫要素も監視対象にする
+        characterData: true,        // テキストノードの変更を監視
+        characterDataOldValue: true, // 変更前のテキストも取得
+        attributeOldValue: true,    // 属性変更前の値も取得
+    };
+
+    // 監視を再設定する関数
+    function setObservers() {
+        // 既存の監視を解除
+        if (subPropsElementObserve) {
+            subPropsElementObserve.disconnect();
+        }
+        if (basicInfoElementObserve) {
+            basicInfoElementObserve.disconnect();
+        }
+        subPropsElementObserve = new MutationObserver(callback);
+        subPropsElementObserve.observe(subPropsElement, config);
+        
+        basicInfoElementObserve = new MutationObserver(callback);
+        basicInfoElementObserve.observe(basicInfoElement, config);
     }
 
     // 要素が画面に表示されている
@@ -204,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createScoreElement(){
         const newDiv = document.createElement('div');
         newDiv.id = MY_ID;
-        // スタイルの設定（高さ、幅など）
+        // スタイル設定
         newDiv.style.width = '100%';
         newDiv.style.height = '50px';
         newDiv.style.display = 'grid'; 
@@ -213,16 +264,16 @@ document.addEventListener('DOMContentLoaded', () => {
         newDiv.style.gap = '0';
         newDiv.style.alignItems = 'center';
         newDiv.style.justifyItems = 'end';
-        // セルを作成して追加する処理
+        // セルを作成して追加
         let scoreList = [];
         let scores = 0;
         for (let i = 0; i < 5; i++){
             scoreList[i] = calculateScore(i);
             scores += Number(scoreList[i]);
         }
-        for (let row = 0; row < 2; row++) {  // 2行分のループ
-            for (let col = 0; col < 5; col++) {  // 5列分のループ
-                const cell = document.createElement('div');  // 新しいセルを作成
+        for (let row = 0; row < 2; row++) {
+            for (let col = 0; col < 5; col++) {
+                const cell = document.createElement('div');
                 if(row == 0 && col == 4){
                     const truncatedScore = Math.floor(Number(scores) * 100) / 100;
                     cell.textContent = truncatedScore.toFixed(2);
@@ -248,22 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const existingNode = document.getElementById(MY_ID);
             // 既存の要素があれば削除
             if (existingNode) {
-                console.log('要素がすでにあったため削除');
+                console.log('自作要素がすでにあったため削除');
                 const parent = relicListElement.parentElement;
                 parent.removeChild(existingNode);
             }
             const newDiv = createScoreElement();
             parent.insertBefore(newDiv, relicListElement);
-
-            // 画面に存在するか確認
-            console.log('basic, relic, sub, final, parent, newDiv');
-            console.log(basicInfoElement.getBoundingClientRect());
-            console.log(relicListElement.getBoundingClientRect());
-            console.log(subPropsElement.getBoundingClientRect());
-            console.log(finalTextElement.getBoundingClientRect());
-            console.log(parent.getBoundingClientRect());
-            console.log(newDiv.getBoundingClientRect());
-            console.log(newDiv);
         }else{
             console.log('聖遺物要素の親が取得できなかった');
         }
@@ -280,16 +321,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // 非同期処理を分離
     async function reDraw() {
         if(!isElementVisible(relicListElement)){
+            console.log('再描画時に聖遺物リストが見えないため再取得');
             relicListElement = await waitForElement('.relic-list');
         }
         if(!isElementVisible(subPropsElement)){
+            console.log('再描画時に追加ステータスが見えないため再取得');
+            if (subPropsElementObserve) {
+                subPropsElementObserve.disconnect();
+            }
             subPropsElement = await waitForElement('.sub-props');
+            subPropsElementObserve = new MutationObserver(callback);
+            subPropsElementObserve.observe(subPropsElement, config);
         }
         if(!isElementVisible(finalTextElement)){
+            console.log('再描画時にfinalテキストが見えないため再取得');
             finalTextElement = await waitForElement('.final-text');
         }
         if(!isElementVisible(basicInfoElement)){
+            console.log('再描画時にキャラ情報が見えないため再取得');
+            if (basicInfoElementObserve) {
+                basicInfoElementObserve.disconnect();
+            }
             basicInfoElement = await waitForElement('.basic-info');
+            basicInfoElementObserve = new MutationObserver(callback);
+            basicInfoElementObserve.observe(basicInfoElement, config);
         }
         draw();
     }
@@ -297,35 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 最初に実行
     async function setup(){
         await initialize();
-        const callback = (mutationsList, observer) => {
-            for (let mutation of mutationsList) {
-                if (mutation.target.id === MY_ID) {
-                    continue;
-                }
-                if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                    console.log('要素が変更されたので再描画');
-                    console.log(`変更された要素:`, mutation.target);
-                    console.log(`変更された属性:`, mutation.attributeName);
-                    reDraw();
-                }
-                
-            }
-        };
-        
-        // 監視するオプションを指定（子要素の追加・削除と属性の変更を監視）
-        const config = {
-            childList: true,            // 子要素の追加・削除を監視
-            attributes: true,           // 属性の変更を監視
-            subtree: true              // 子孫要素も監視対象にする
-        };
-        
-        // 1つ目の要素を監視
-        const observer = new MutationObserver(callback);
-        observer.observe(subPropsElement, config);
-        
-        // 2つ目の要素を監視
-        const observer2 = new MutationObserver(callback);
-        observer2.observe(basicInfoElement, config);
+        setObservers();
     }
 
     // スコア要素作成
@@ -339,6 +366,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     console.log('拡張テスト開始');
     firstDraw();
-
 });
 
