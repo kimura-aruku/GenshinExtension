@@ -31,6 +31,14 @@ let basicInfoElement;
 /** @type {CSSStyleDeclaration | null} */
 let finalTextStyle;
 
+// オリジナルの説明文スタイル
+/** @type {CSSStyleDeclaration | null} */
+let descriptionTextStyle;
+
+// オリジナルのラベルスタイル
+/** @type {CSSStyleDeclaration | null} */
+let labelTextStyle;
+
 // 追加ステータスとキャラ情報の監視オブジェクト
 let subPropsElementObserve, basicInfoElementObserve;
 
@@ -189,15 +197,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += Number(getScore(subPropName, subPropValue));
             }
         });
-        return score;
+        return Math.floor(score * 100) / 100;
     }
 
     // オリジナル要素のスタイルをコピー
-    function applyOriginStyle(element){
+    function applyOriginalStyle(element, OriginalStyle){
         const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         for (let style of allowedProperties) {
-            element.style[style] = finalTextStyle.getPropertyValue(style);
+            element.style[style] = OriginalStyle.getPropertyValue(style);
         }
+    }
+
+    // 数値オリジナル要素のスタイルをコピー
+    function applyOriginalNumberStyle(element){
+        applyOriginalStyle(element, finalTextStyle);
+    }
+
+    // 説明文オリジナル要素のスタイルをコピー
+    function applyOriginalDescriptionStyle(element){
+        applyOriginalStyle(element, descriptionTextStyle);
+    }
+
+    // 項目名オリジナル要素のスタイルをコピー
+    function applyOriginalLabelStyle(element){
+        applyOriginalStyle(element, labelTextStyle);
     }
 
     // スコアにして返す
@@ -268,9 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1行目1列目〜3列目を結合するdiv
         const cell1 = document.createElement('div');
         cell1.textContent = 'スコアは追加ステータスから算出されます。';
-        // applyOriginStyle(cell1);
-        cell1.style.color = 'rgba(255, 255, 255, 0.45)';
-        cell1.style.flex = '3';  // 横幅を均等に設定
+        applyOriginalDescriptionStyle(cell1);
+        cell1.style.flex = '3';
         cell1.style.paddingRight = 'calc(8 * 3px + 12 * 3px)';
         cell1.style.display = 'flex';
         cell1.style.alignItems = 'center';
@@ -280,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1行目の3列目
         const cell2 = document.createElement('div');
-        applyOriginStyle(cell2);
         cell2.style.flex = '1';  // 横幅を均等に設定
         cell2.style.padding = '0 8px 0 12px';
         cell2.style.display = 'flex';
@@ -291,28 +312,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell3 = document.createElement('div');
         cell3.style.display = 'flex';
         cell3.style.justifyContent = 'space-between';
-        cell3.style.flex = '1';  // 横幅を均等に設定
+        cell3.style.flex = '1';
         cell3.style.padding = '0 8px 0 12px';
         cell3.style.alignItems = 'center';
         // 左寄せのテキストを作成
         const cell3Left = document.createElement('span');
+        applyOriginalLabelStyle(cell3Left);
         cell3Left.textContent = '合計スコア:';
-        cell3Left.style.color = 'rgba(255, 255, 255, 0.65)';
-        cell3Left.style.textAlign = 'left';
         cell3.appendChild(cell3Left);
         // 右寄せのテキストを作成
         const cell3Right = document.createElement('span');
-        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
-        cell3Right.textContent = truncatedScore.toFixed(2);
-        applyOriginStyle(cell3Right);
-        cell3Right.style.textAlign = 'right'; // 右寄せ
+        cell3Right.textContent = scores.toFixed(2);
+        applyOriginalNumberStyle(cell3Right);
         cell3.appendChild(cell3Right);
         row1.appendChild(cell3);
 
         // 2行目を作成
         const row2 = document.createElement('div');
         row2.style.display = 'flex';
-        row2.style.width = '100%';  // 横幅100%にする
+        row2.style.width = '100%';
         for (let col = 0; col < 5; col++) {
             const cell = document.createElement('div');
             cell.style.display = 'flex';
@@ -325,20 +343,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // 左寄せのテキストを作成
             const cellLeft = document.createElement('span');
+            applyOriginalLabelStyle(cellLeft);
             cellLeft.textContent = 'スコア:';
-            cellLeft.style.color = 'rgba(255, 255, 255, 0.65)';
-            cellLeft.style.textAlign = 'left';
             cell.appendChild(cellLeft);
             // 右寄せのテキストを作成
             const cellRight = document.createElement('span');
-            const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
-            cellRight.textContent = truncatedScore.toFixed(2);
-            applyOriginStyle(cellRight);
-            cellRight.style.textAlign = 'right';
+            cellRight.textContent = scoreList[col].toFixed(2);
+            applyOriginalNumberStyle(cellRight);
             cell.appendChild(cellRight);
             row2.appendChild(cell);
         }
-
         // テーブルに行を追加
         newDiv.appendChild(row1);
         newDiv.appendChild(row2);
@@ -396,12 +410,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 最初に実行
     async function setup(){
+        // 説明用のスタイル取得
+        const artifactHeaderElement = await waitForElement('.artifact-info header');
+        const descriptionElements = artifactHeaderElement.querySelectorAll('div');
+        let descriptionElement = null;
+        const searchKeyForDescription = 'ハイライトされたステータス';
+        for (let el of descriptionElements) {
+            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
+                if (el.textContent.includes(searchKeyForDescription)) {
+                    descriptionElement = el;
+                    break;
+                }
+            }
+        }
+        descriptionTextStyle = window.getComputedStyle(descriptionElement);
+        // 聖遺物要素取得
         relicListElement = await waitForElement('.relic-list');
         const subPropsElement = await waitForElement('.sub-props');
+        // 項目ラベル用のスタイル取得
+        const subPropsElements = subPropsElement.querySelectorAll('p');
+        let labelElement = null;
+        const searchKeyForLabel = '追加ステータス';
+        for (let el of subPropsElements) {
+            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
+                if (el.textContent.includes(searchKeyForLabel)) {
+                    labelElement = el;
+                    break;
+                }
+            }
+        }
+        labelTextStyle = window.getComputedStyle(labelElement);
+        // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
+        // 数値用スタイル取得
         const finalTextElement = await waitForElement('.final-text');
         finalTextStyle = window.getComputedStyle(finalTextElement);
+        // キャラ情報要素取得
         basicInfoElement = await waitForElement('.basic-info');
+        // 変更監視開始
         setObservers();
     }
 
@@ -417,7 +463,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('拡張テスト開始');
     firstDraw();
-
-    // TODO :キャプション用スタイル、ラベル用スタイルを画面から取得して使いたい
 });
 
