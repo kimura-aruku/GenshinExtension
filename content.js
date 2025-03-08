@@ -27,17 +27,18 @@ let subPropNames = [];
 /** @type {HTMLElement | null} */
 let basicInfoElement;
 
-// オリジナルの数値スタイル
-/** @type {CSSStyleDeclaration | null} */
-let finalTextStyle;
+// スタイルそのものを保持しているとバグったので辞書にキャッシュ
+// オリジナルの数値スタイルオブジェクト
+/** @type {{ [key: string]: string }} */
+let numberStyleObject = {};
 
-// オリジナルの説明文スタイル
-/** @type {CSSStyleDeclaration | null} */
-let descriptionTextStyle;
+// オリジナルの説明文スタイルオブジェクト
+/** @type {{ [key: string]: string }} */
+let descriptionStyleObject = {};
 
-// オリジナルのラベルスタイル
-/** @type {CSSStyleDeclaration | null} */
-let labelTextStyle;
+// オリジナルのラベルスタイルオブジェクト
+/** @type {{ [key: string]: string }} */
+let labelStyleObject = {};
 
 // 追加ステータスとキャラ情報の監視オブジェクト
 let subPropsElementObserve, basicInfoElementObserve;
@@ -201,27 +202,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.floor(score * 100) / 100;
     }
 
-    // オリジナル要素のスタイルをコピー
-    function applyOriginalStyle(element, OriginalStyle){
-        const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
-        for (let style of allowedProperties) {
-            element.style[style] = OriginalStyle.getPropertyValue(style);
-        }
-    }
 
     // 数値オリジナル要素のスタイルをコピー
     function applyOriginalNumberStyle(element){
-        applyOriginalStyle(element, finalTextStyle);
+        Object.assign(element.style, numberStyleObject);
     }
 
     // 説明文オリジナル要素のスタイルをコピー
     function applyOriginalDescriptionStyle(element){
-        applyOriginalStyle(element, descriptionTextStyle);
+        Object.assign(element.style, descriptionStyleObject);
     }
 
     // 項目名オリジナル要素のスタイルをコピー
     function applyOriginalLabelStyle(element){
-        applyOriginalStyle(element, labelTextStyle);
+        Object.assign(element.style, labelStyleObject);
     }
 
     // スコアにして返す
@@ -412,6 +406,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 最初に実行
     async function setup(){
+        // コピー対象のスタイルプロパティ
+        const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         // 説明用のスタイル取得
         const artifactHeaderElement = await waitForElement('.artifact-info header');
         const descriptionElements = artifactHeaderElement.querySelectorAll('div');
@@ -425,7 +421,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        descriptionTextStyle = window.getComputedStyle(descriptionElement);
+        const descriptionTextStyle = window.getComputedStyle(descriptionElement);
+        for (let style of allowedProperties) {
+            descriptionStyleObject[style] = descriptionTextStyle.getPropertyValue(style);
+        }
         // 聖遺物要素取得
         relicListElement = await waitForElement('.relic-list');
         const subPropsElement = await waitForElement('.sub-props');
@@ -441,12 +440,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        labelTextStyle = window.getComputedStyle(labelElement);
+        const labelTextStyle = window.getComputedStyle(labelElement);
+        for (let style of allowedProperties) {
+            labelStyleObject[style] = labelTextStyle.getPropertyValue(style);
+        }
         // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
         // 数値用スタイル取得
         const finalTextElement = await waitForElement('.final-text');
-        finalTextStyle = window.getComputedStyle(finalTextElement);
+        const finalTextStyle = window.getComputedStyle(finalTextElement);
+        for (let style of allowedProperties) {
+            numberStyleObject[style] = finalTextStyle.getPropertyValue(style);
+        }
+
         // キャラ情報要素取得
         basicInfoElement = await waitForElement('.basic-info');
         // 変更監視開始
