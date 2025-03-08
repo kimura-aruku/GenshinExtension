@@ -269,11 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 1行目1列目〜3列目を結合するdiv
         const cell1 = document.createElement('div');
-        cell1.textContent = 'スコアは追加ステータスから算出します。';
+        cell1.textContent = 'スコアは追加ステータスから算出されます。';
         // applyOriginStyle(cell1);
         cell1.style.color = 'rgba(255, 255, 255, 0.45)';
         cell1.style.flex = '3';  // 横幅を均等に設定
-        cell1.style.padding = '0 calc(8 * 5px) 0 8px';
+        cell1.style.paddingRight = 'calc(8 * 3px + 12 * 3px)';
         cell1.style.display = 'flex';
         cell1.style.alignItems = 'center';
         cell1.style.justifyContent = 'flex-start';
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell2 = document.createElement('div');
         applyOriginStyle(cell2);
         cell2.style.flex = '1';  // 横幅を均等に設定
-        cell2.style.padding = '0 8px';
+        cell2.style.padding = '0 8px 0 12px';
         cell2.style.display = 'flex';
         cell2.style.marginRight = '12px';
         row1.appendChild(cell2);
@@ -294,12 +294,12 @@ document.addEventListener('DOMContentLoaded', () => {
         cell3.style.display = 'flex';
         cell3.style.justifyContent = 'space-between';
         cell3.style.flex = '1';  // 横幅を均等に設定
-        cell3.style.padding = '0 8px';
+        cell3.style.padding = '0 8px 0 12px';
         cell3.style.alignItems = 'center';
         // 左寄せのテキストを作成
         const cell3Left = document.createElement('span');
         cell3Left.textContent = '合計スコア:';
-        cell3Left.style.color = 'rgba(255, 255, 255, 0.45)';
+        cell3Left.style.color = 'rgba(255, 255, 255, 0.65)';
         cell3Left.style.textAlign = 'left';
         cell3.appendChild(cell3Left);
         // 右寄せのテキストを作成
@@ -320,16 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.style.display = 'flex';
             cell.style.justifyContent = 'space-between';
             cell.style.flex = '1';
-            cell.style.padding = '8px';
+            cell.style.padding = '8px 8px 8px 12px';
             cell.style.alignItems = 'center';
             if(col < 4){
                 cell.style.marginRight = '12px';
             }
-
             // 左寄せのテキストを作成
             const cellLeft = document.createElement('span');
             cellLeft.textContent = 'スコア:';
-            cellLeft.style.color = 'rgba(255, 255, 255, 0.45)';
+            cellLeft.style.color = 'rgba(255, 255, 255, 0.65)';
             cellLeft.style.textAlign = 'left';
             cell.appendChild(cellLeft);
             // 右寄せのテキストを作成
