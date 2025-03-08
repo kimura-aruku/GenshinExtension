@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.style.display = 'flex';
             cell.style.justifyContent = 'space-between';
             cell.style.flex = '1';
-            cell.style.padding = '8px 8px 8px 12px';
+            cell.style.padding = '10px 8px 10px 12px';
             cell.style.alignItems = 'center';
             if(col < 4){
                 cell.style.marginRight = '12px';
