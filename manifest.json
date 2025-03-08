@@ -1,0 +1,13 @@
+{
+    "content_scripts": [ {
+       "js": [ "content.js" ],
+       "matches": [ "https://act.hoyolab.com/app/community-game-records-sea/index.html*" ],
+       "run_at": "document_start"
+    } ],
+    "description": "戦績画面で追加ステータスを基準にスコア計算をする拡張",
+    "manifest_version": 3,
+    "name": "原神スコア計算機",
+    "short_name": "スコア計算機",
+    "version": "0.10"
+ }
+ 
