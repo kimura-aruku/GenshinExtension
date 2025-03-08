@@ -194,9 +194,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // オリジナル要素のスタイルをコピー
     function applyOriginStyle(element){
-        // computedStylesをtargetElementに適用
+        const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         for (let style of finalTextStyle) {
-            element.style[style] = finalTextStyle.getPropertyValue(style);
+            if (allowedProperties.includes(style)) {
+                element.style[style] = finalTextStyle.getPropertyValue(style);
+            }
         }
     }
 
@@ -249,35 +251,63 @@ document.addEventListener('DOMContentLoaded', () => {
         // スタイル設定
         newDiv.style.width = '100%';
         newDiv.style.height = '50px';
-        newDiv.style.display = 'grid'; 
-        newDiv.style.gridTemplateRows = 'repeat(2, 1fr)'; 
-        newDiv.style.gridTemplateColumns = 'repeat(5, 1fr)'; 
+        newDiv.style.display = 'flex';
         newDiv.style.gap = '0';
         newDiv.style.alignItems = 'center';
-        newDiv.style.justifyItems = 'end';
-        // セルを作成して追加
+        newDiv.style.margin = '8px';
+
+        // スコア計算
         let scoreList = [];
         let scores = 0;
         for (let i = 0; i < 5; i++){
             scoreList[i] = calculateScore(i);
             scores += Number(scoreList[i]);
         }
-        for (let row = 0; row < 2; row++) {
-            for (let col = 0; col < 5; col++) {
-                const cell = document.createElement('div');
-                if(row == 0 && col == 4){
-                    const truncatedScore = Math.floor(Number(scores) * 100) / 100;
-                    cell.textContent = truncatedScore.toFixed(2);
-                }
-                if(row == 1){
-                    const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
-                    cell.textContent = truncatedScore.toFixed(2);
-                }
-                applyOriginStyle(cell);
-                cell.style.paddingRight = '10px';
-                newDiv.appendChild(cell);
-            }
+        // テーブル追加
+        const table = document.createElement('table');
+        table.style.width = '100%'; // 必要に応じてテーブルの幅を調整
+        table.style.tableLayout = 'fixed';
+
+        // 1行目を作成
+        const tr1 = document.createElement('tr');
+        const td1 = document.createElement('td');
+        applyOriginStyle(td1);
+        td1.colSpan = 3;  // 1行目1列目〜3列目を結合
+        td1.textContent = 'スコアは追加ステータスから算出します。';  // 文字列をセット
+        td1.style.verticalAlign = 'middle';
+        td1.style.textAlign = 'left';
+        td1.style.padding = '8px';
+        tr1.appendChild(td1);
+
+        // 1行目の3,4列目
+        const td2 = document.createElement('td');
+        td2.colSpan = 2;
+        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
+        td2.textContent = truncatedScore.toFixed(2);  // 計算したスコアをセット
+        applyOriginStyle(td2);
+        td2.style.textAlign = 'right';
+        td2.style.verticalAlign = 'middle';
+        td2.style.padding = '8px';
+        tr1.appendChild(td2);
+
+        // 2行目を作成
+        const tr2 = document.createElement('tr');
+        for (let col = 0; col < 5; col++) {
+            const td = document.createElement('td');
+            const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
+            td.textContent = truncatedScore.toFixed(2);  // 各列のスコアを表示
+            applyOriginStyle(td);
+            td.style.textAlign = 'right';
+            td.style.verticalAlign = 'middle';
+            td.style.padding = '8px';
+            tr2.appendChild(td);
         }
+        // テーブルに行を追加
+        table.appendChild(tr1);
+        table.appendChild(tr2);
+
+        // newDivにテーブルを追加
+        newDiv.appendChild(table);
         return newDiv;
     }
 
