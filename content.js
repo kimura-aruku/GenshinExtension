@@ -250,11 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
         newDiv.id = MY_ID;
         // スタイル設定
         newDiv.style.width = '100%';
-        newDiv.style.height = '50px';
         newDiv.style.display = 'flex';
+        newDiv.style.flexDirection = 'column';  // flexで縦方向に並べる
         newDiv.style.gap = '0';
         newDiv.style.alignItems = 'center';
-        newDiv.style.margin = '8px';
 
         // スコア計算
         let scoreList = [];
@@ -263,51 +262,58 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreList[i] = calculateScore(i);
             scores += Number(scoreList[i]);
         }
-        // テーブル追加
-        const table = document.createElement('table');
-        table.style.width = '100%'; // 必要に応じてテーブルの幅を調整
-        table.style.tableLayout = 'fixed';
+        // 1行目
+        const row1 = document.createElement('div');
+        row1.style.display = 'flex';
+        row1.style.width = '100%';  // 横幅100%にする
 
-        // 1行目を作成
-        const tr1 = document.createElement('tr');
-        const td1 = document.createElement('td');
-        applyOriginStyle(td1);
-        td1.colSpan = 3;  // 1行目1列目〜3列目を結合
-        td1.textContent = 'スコアは追加ステータスから算出します。';  // 文字列をセット
-        td1.style.verticalAlign = 'middle';
-        td1.style.textAlign = 'left';
-        td1.style.padding = '8px';
-        tr1.appendChild(td1);
+        // 1行目1列目〜3列目を結合するdiv
+        const cell1 = document.createElement('div');
+        cell1.textContent = 'スコアは追加ステータスから算出します。';
+        // applyOriginStyle(cell1);
+        cell1.style.color = 'rgba(255, 255, 255, 0.45)';
+        cell1.style.flex = '3';  // 横幅を均等に設定
+        cell1.style.padding = '0 8px';
+        cell1.style.display = 'flex';
+        cell1.style.alignItems = 'center';
+        cell1.style.justifyContent = 'flex-start';
+        row1.appendChild(cell1);
 
-        // 1行目の3,4列目
-        const td2 = document.createElement('td');
-        td2.colSpan = 2;
+        // 1行目の3,4列目を結合するdiv
+        const cell2 = document.createElement('div');
         const truncatedScore = Math.floor(Number(scores) * 100) / 100;
-        td2.textContent = truncatedScore.toFixed(2);  // 計算したスコアをセット
-        applyOriginStyle(td2);
-        td2.style.textAlign = 'right';
-        td2.style.verticalAlign = 'middle';
-        td2.style.padding = '8px';
-        tr1.appendChild(td2);
+        cell2.textContent = truncatedScore.toFixed(2);
+        applyOriginStyle(cell2);
+        cell2.style.flex = '2';  // 横幅を均等に設定
+        cell2.style.padding = '0 8px';
+        cell2.style.display = 'flex';
+        cell2.style.alignItems = 'center';
+        cell2.style.justifyContent = 'flex-end';
+        row1.appendChild(cell2);
 
         // 2行目を作成
-        const tr2 = document.createElement('tr');
+        const row2 = document.createElement('div');
+        row2.style.display = 'flex';
+        row2.style.width = '100%';  // 横幅100%にする
         for (let col = 0; col < 5; col++) {
-            const td = document.createElement('td');
+            const cell = document.createElement('div');
             const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
-            td.textContent = truncatedScore.toFixed(2);  // 各列のスコアを表示
-            applyOriginStyle(td);
-            td.style.textAlign = 'right';
-            td.style.verticalAlign = 'middle';
-            td.style.padding = '8px';
-            tr2.appendChild(td);
+            cell.textContent = truncatedScore.toFixed(2);
+            applyOriginStyle(cell);
+            cell.style.flex = '1';  // 横幅を均等に設定
+            cell.style.padding = '8px';
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'flex-end';
+            if(col < 4){
+                cell.style.marginRight = '12px';
+            }
+            row2.appendChild(cell);
         }
-        // テーブルに行を追加
-        table.appendChild(tr1);
-        table.appendChild(tr2);
 
-        // newDivにテーブルを追加
-        newDiv.appendChild(table);
+        // テーブルに行を追加
+        newDiv.appendChild(row1);
+        newDiv.appendChild(row2);
         return newDiv;
     }
 
