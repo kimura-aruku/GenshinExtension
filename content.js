@@ -49,22 +49,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const observer = new MutationObserver((mutationsList, observer) => {
                 const element = document.querySelector(selector);
                 if (element) {
-                    observer.disconnect(); // 要素が見つかったら監視を停止
-                    resolve(element); // 要素が見つかったらPromiseを解決
+                    observer.disconnect();
+                    resolve(element);
                 }
             });
-            // DOMの変更を監視（子要素の追加、属性の変更など）
+            // DOMの変更を監視
             observer.observe(document.body, { 
-                childList: true,  // 子要素の追加/削除
-                subtree: true,    // サブツリー内の変化も監視
-                attributes: true  // 属性の変更も監視
+                childList: true,
+                subtree: true,
+                attributes: true
             });
 
-            // タイムアウトの設定（10秒以内に見つからない場合はエラー）
+            // タイムアウトの設定
             setTimeout(() => {
                 observer.disconnect();
                 reject(new Error(`Timeout: 要素 ${selector} が見つかりませんでした`));
-            }, 10000);  // タイムアウト時間を調整
+            }, 10000);
         });
     }
 
@@ -84,14 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 監視するオプション（設定）
+    // 監視設定
     const config = {
-        childList: true,            // 子要素の追加・削除を監視
-        attributes: true,           // 属性の変更を監視
-        subtree: true,              // 子孫要素も監視対象にする
-        characterData: true,        // テキストノードの変更を監視
-        characterDataOldValue: false, // 変更前のテキストも取得
-        attributeOldValue: false,    // 属性変更前の値も取得
+        childList: true,
+        attributes: true,
+        subtree: true,
+        characterData: true,
+        characterDataOldValue: false,
+        attributeOldValue: false,
     };
 
     // 監視を再設定する関数
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!element) {
             return false;
         }
-        // getBoundingClientRect で画面内に収まっているかチェック
+        // 画面内に収まっているかチェック
         const rect = element.getBoundingClientRect();
         const isInViewport = (
             rect.width > 0 &&
@@ -139,9 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
         subPropNames = Array.from(propItemElements).map(element => {
             const childText = Array.from(element.childNodes)
                 .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') // テキストノードかつ空白ではない
-                .map(node => node.textContent.trim()); // 空白を取り除いたテキストを取得
+                .map(node => node.textContent.trim());
             let textContent;
-            // もし childText が空であれば、直接 element.textContent を使ってテキストを取得する
+            // childTextが空であれば、textContentを使ってテキストを取得
             if (childText.length === 0) {
                 textContent = element.textContent.trim();
             }else{
@@ -158,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
         element.childNodes.forEach(node => {
             if (node.nodeType === Node.TEXT_NODE) {
                 let text = node.textContent ? node.textContent.trim().replace(/\n/g, "") : "";
-                if (text && !/^\d+$/.test(text)) { // 空白 & 数値のみを除外
+                // 空白 & 数値のみを除外
+                if (text && !/^\d+$/.test(text)) { 
                     textNodes.push(node);
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
@@ -272,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // スタイル設定
         newDiv.style.width = '100%';
         newDiv.style.display = 'flex';
-        newDiv.style.flexDirection = 'column';  // flexで縦方向に並べる
+        newDiv.style.flexDirection = 'column';
         newDiv.style.gap = '0';
         newDiv.style.alignItems = 'center';
 
@@ -286,9 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1行目
         const row1 = document.createElement('div');
         row1.style.display = 'flex';
-        row1.style.width = '100%';  // 横幅100%にする
+        row1.style.width = '100%';
 
-        // 1行目1列目〜3列目を結合するdiv
+        // 1行目1列目〜3列目
         const cell1 = document.createElement('div');
         cell1.textContent = 'スコアは追加ステータスから算出されます。';
         applyOriginalDescriptionStyle(cell1);
@@ -300,15 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
         cell1.style.marginRight = 'calc(12 * 3px)';
         row1.appendChild(cell1);
         
-        // 1行目の3列目
+        // 1行目の4列目
         const cell2 = document.createElement('div');
-        cell2.style.flex = '1';  // 横幅を均等に設定
+        cell2.style.flex = '1';
         cell2.style.padding = '0 8px 0 12px';
         cell2.style.display = 'flex';
         cell2.style.marginRight = '12px';
         row1.appendChild(cell2);
 
-        // 1行目の4列目
+        // 1行目の5列目
         const cell3 = document.createElement('div');
         cell3.style.display = 'flex';
         cell3.style.justifyContent = 'space-between';
@@ -359,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return newDiv;
     }
 
+    // 描画
     function draw(){
         console.log('描画開始');
         const parent = relicListElement.parentElement;
@@ -464,4 +466,3 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('拡張テスト開始');
     firstDraw();
 });
-
