@@ -195,10 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // オリジナル要素のスタイルをコピー
     function applyOriginStyle(element){
         const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
-        for (let style of finalTextStyle) {
-            if (allowedProperties.includes(style)) {
-                element.style[style] = finalTextStyle.getPropertyValue(style);
-            }
+        for (let style of allowedProperties) {
+            element.style[style] = finalTextStyle.getPropertyValue(style);
         }
     }
 
