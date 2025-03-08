@@ -23,13 +23,13 @@ let subPropsElement;
 /** @type {string[]} */
 let subPropNames = [];
 
-// オリジナルの数値要素
-/** @type {HTMLElement | null} */
-let finalTextElement;
-
 // キャラの基本情報要素
 /** @type {HTMLElement | null} */
 let basicInfoElement;
+
+// オリジナルの数値スタイル
+/** @type {CSSStyleDeclaration | null} */
+let finalTextStyle;
 
 // 追加ステータスとキャラ情報の監視オブジェクト
 let subPropsElementObserve, basicInfoElementObserve;
@@ -200,12 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // オリジナル要素のスタイルをコピー
     function applyOriginStyle(element){
-        // sourceElementのスタイルを取得
-        const computedStyles = window.getComputedStyle(finalTextElement);
-
         // computedStylesをtargetElementに適用
-        for (let style of computedStyles) {
-            element.style[style] = computedStyles.getPropertyValue(style);
+        for (let style of finalTextStyle) {
+            element.style[style] = finalTextStyle.getPropertyValue(style);
         }
     }
 
@@ -310,13 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 初期化処理
-    async function initialize(){
-        relicListElement = await waitForElement('.relic-list');
-        subPropsElement = await waitForElement('.sub-props');
-        finalTextElement = await waitForElement('.final-text');
-        basicInfoElement = await waitForElement('.basic-info');
-    }
 
     // 非同期処理を分離
     async function reDraw() {
@@ -333,10 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
             subPropsElementObserve = new MutationObserver(callback);
             subPropsElementObserve.observe(subPropsElement, config);
         }
-        if(!isElementVisible(finalTextElement)){
-            console.log('再描画時にfinalテキストが見えないため再取得');
-            finalTextElement = await waitForElement('.final-text');
-        }
         if(!isElementVisible(basicInfoElement)){
             console.log('再描画時にキャラ情報が見えないため再取得');
             if (basicInfoElementObserve) {
@@ -351,7 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 最初に実行
     async function setup(){
-        await initialize();
+        relicListElement = await waitForElement('.relic-list');
+        subPropsElement = await waitForElement('.sub-props');
+        const finalTextElement = await waitForElement('.final-text');
+        finalTextStyle = window.getComputedStyle(finalTextElement);
+        basicInfoElement = await waitForElement('.basic-info');
         setObservers();
     }
 
@@ -366,5 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     console.log('拡張テスト開始');
     firstDraw();
+
+    // TODO :処理が遅いので、フラグを追加して無駄な要素削除+要素作成を抑制したい
 });
 
