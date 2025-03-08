@@ -9,17 +9,15 @@ const CRIT_DMG = '会心ダメージ';
 const ELEMENTAL_MASTERY = '元素熟知';
 const ENERGY_RECHARGE = '元素チャージ効率';
 
-// 親要素
+const MY_ID = 'alk-element';
+
+// 聖遺物親要素
 /** @type {HTMLElement | null} */
-let characterContentElement;
+let relicListElement;
 
-// // 聖遺物親要素
-// /** @type {HTMLElement | null} */
-// let relicListElement;
-
-// // 追加ステータス親要素
-// /** @type {HTMLElement | null} */
-// let subPropsElement;
+// 追加ステータス親要素
+/** @type {HTMLElement | null} */
+let subPropsElement;
 
 // 追加ステータス一覧
 /** @type {string[]} */
@@ -29,9 +27,9 @@ let subPropNames = [];
 /** @type {HTMLElement | null} */
 let finalTextElement;
 
-// // キャラの基本情報要素
-// /** @type {HTMLElement | null} */
-// let basicInfoElement;
+// キャラの基本情報要素
+/** @type {HTMLElement | null} */
+let basicInfoElement;
 
 document.addEventListener('DOMContentLoaded', () => {
     // 要素取得
@@ -57,6 +55,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 reject(new Error(`Timeout: 要素 ${selector} が見つかりませんでした`));
             }, 10000);  // タイムアウト時間を調整
         });
+    }
+
+    // 要素が画面に表示されている
+    function isElementVisible(element) {
+        if (!element) {
+            return false;
+        }
+        // getBoundingClientRect で画面内に収まっているかチェック
+        const rect = element.getBoundingClientRect();
+        const isInViewport = (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.top >= 0 && rect.left >= 0 &&
+            rect.bottom <= window.innerHeight &&
+            rect.right <= window.innerWidth
+        );
+        // offsetWidth / offsetHeight で要素のサイズがゼロでないかチェック
+        const hasDimensions = element.offsetWidth > 0 && element.offsetHeight > 0;
+        // CSSの display と visibility プロパティをチェック
+        const style = window.getComputedStyle(element);
+        const isVisibleInCSS = style.display !== 'none' && style.visibility !== 'hidden';
+        // すべての条件が満たされる場合に表示されていると判断
+        return isInViewport && hasDimensions && isVisibleInCSS;
     }
 
     // 追加ステータスのキャッシュ
@@ -182,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // スコア要素作成
     function createScoreElement(){
         const newDiv = document.createElement('div');
-        newDiv.id = 'alk-element'
+        newDiv.id = MY_ID;
         // スタイルの設定（高さ、幅など）
         newDiv.style.width = '100%';
         newDiv.style.height = '50px';
@@ -212,10 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 applyOriginStyle(cell);
                 cell.style.paddingRight = '10px';
-                newDiv.appendChild(cell);  // セルを新しい div に追加
+                newDiv.appendChild(cell);
             }
         }
-        return newDiv;  // 作成した newDiv を返す
+        return newDiv;
     }
 
     function draw(){
@@ -224,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (parent && relicListElement) {
             // 追加ステータス名取得
             cacheSubPropNames();
-            const existingNode = document.getElementById('alk-element');
+            const existingNode = document.getElementById(MY_ID);
             // 既存の要素があれば削除
             if (existingNode) {
                 console.log('要素がすでにあったため削除');
@@ -250,66 +271,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 初期化処理
     async function initialize(){
-        // 必要なすべての要素を待機
-        characterContentElement = await waitForElement('character-content');
-        // relicListElement = await waitForElement('.relic-list');
-        // subPropsElement = await waitForElement('.sub-props');
-        // finalTextElement = await waitForElement('.final-text');
-        // basicInfoElement = await waitForElement('.basic-info');
+        relicListElement = await waitForElement('.relic-list');
+        subPropsElement = await waitForElement('.sub-props');
+        finalTextElement = await waitForElement('.final-text');
+        basicInfoElement = await waitForElement('.basic-info');
+    }
 
+    // 非同期処理を分離
+    async function reDraw() {
+        if(!isElementVisible(relicListElement)){
+            relicListElement = await waitForElement('.relic-list');
+        }
+        if(!isElementVisible(subPropsElement)){
+            subPropsElement = await waitForElement('.sub-props');
+        }
+        if(!isElementVisible(finalTextElement)){
+            finalTextElement = await waitForElement('.final-text');
+        }
+        if(!isElementVisible(basicInfoElement)){
+            basicInfoElement = await waitForElement('.basic-info');
+        }
+        draw();
+    }
 
-        // TODO: キャラか追加ステータスが変更されたら再度実行するようにする
-        // 監視する対象の要素を取得
+    // 最初に実行
+    async function setup(){
+        await initialize();
         const callback = (mutationsList, observer) => {
             for (let mutation of mutationsList) {
-                if (mutation.type === 'childList') {
-                    console.log('要素が変更されたので再描画。現在のbasicInfoは以下。');
-                    console.log(basicInfoElement);
-                    draw();
-                } else if (mutation.type === 'attributes') {
-                    console.log('属性が変更されたので再描画。現在のbasicInfoは以下。');
-                    console.log(basicInfoElement);
-                    draw();
+                if (mutation.target.id === MY_ID) {
+                    continue;
                 }
+                if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                    console.log('要素が変更されたので再描画');
+                    console.log(`変更された要素:`, mutation.target);
+                    console.log(`変更された属性:`, mutation.attributeName);
+                    reDraw();
+                }
+                
             }
         };
         
         // 監視するオプションを指定（子要素の追加・削除と属性の変更を監視）
         const config = {
-            childList: true,  // 子要素の追加・削除を監視
-            subtree: true,     // 子孫の要素も監視対象にする
-            attributes: true,  // 属性の変更を監視
+            childList: true,            // 子要素の追加・削除を監視
+            attributes: true,           // 属性の変更を監視
+            subtree: true              // 子孫要素も監視対象にする
         };
-        // characterContent要素を監視
-        const observer = new MutationObserver(callback);
-        observer1.observe(subPropsElement, config);
-        // // 1つ目の要素を監視
-        // const observer1 = new MutationObserver(callback);
-        // observer1.observe(subPropsElement, config);
         
-        // // 2つ目の要素を監視
-        // const observer2 = new MutationObserver(callback);
-        // observer2.observe(basicInfoElement, config);
+        // 1つ目の要素を監視
+        const observer = new MutationObserver(callback);
+        observer.observe(subPropsElement, config);
+        
+        // 2つ目の要素を監視
+        const observer2 = new MutationObserver(callback);
+        observer2.observe(basicInfoElement, config);
     }
 
     // スコア要素作成
-    async function addScoreElement(){
+    async function firstDraw(){
         try {
-            await initialize();
+            await setup();
             draw();
         } catch (error) {
             console.error('エラー:', error);
         }
     }
-
     console.log('拡張テスト開始');
-    addScoreElement();
-
-
-
-    // TODO: 再描画できない原因がわかった
-    // basic, final-textは存在してるが、relic、sub、parent、newDivは大きさがなぜか0になっていた
-    // もっと親から取り直すようにすればいけるかも
+    firstDraw();
 
 });
 
