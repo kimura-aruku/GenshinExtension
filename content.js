@@ -273,23 +273,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // applyOriginStyle(cell1);
         cell1.style.color = 'rgba(255, 255, 255, 0.45)';
         cell1.style.flex = '3';  // 横幅を均等に設定
-        cell1.style.padding = '0 8px';
+        cell1.style.padding = '0 calc(8 * 5px) 0 8px';
         cell1.style.display = 'flex';
         cell1.style.alignItems = 'center';
         cell1.style.justifyContent = 'flex-start';
+        cell1.style.marginRight = 'calc(12 * 3px)';
         row1.appendChild(cell1);
-
-        // 1行目の3,4列目を結合するdiv
+        
+        // 1行目の3列目
         const cell2 = document.createElement('div');
-        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
-        cell2.textContent = truncatedScore.toFixed(2);
         applyOriginStyle(cell2);
-        cell2.style.flex = '2';  // 横幅を均等に設定
+        cell2.style.flex = '1';  // 横幅を均等に設定
         cell2.style.padding = '0 8px';
         cell2.style.display = 'flex';
-        cell2.style.alignItems = 'center';
-        cell2.style.justifyContent = 'flex-end';
+        cell2.style.marginRight = '12px';
         row1.appendChild(cell2);
+
+        // 1行目の4列目
+        const cell3 = document.createElement('div');
+        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
+        cell3.textContent = truncatedScore.toFixed(2);
+        applyOriginStyle(cell3);
+        cell3.style.flex = '1';  // 横幅を均等に設定
+        cell3.style.padding = '0 8px';
+        cell3.style.display = 'flex';
+        cell3.style.alignItems = 'center';
+        cell3.style.justifyContent = 'flex-end';
+        row1.appendChild(cell3);
 
         // 2行目を作成
         const row2 = document.createElement('div');
@@ -390,6 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('拡張テスト開始');
     firstDraw();
 
-    // TODO :処理が遅いので、フラグを追加して無駄な要素削除+要素作成を抑制したい
+    // TODO :キャプション用スタイル、ラベル用スタイルを画面から取得して使いたい
 });
 
