@@ -291,14 +291,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 1行目の4列目
         const cell3 = document.createElement('div');
-        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
-        cell3.textContent = truncatedScore.toFixed(2);
-        applyOriginStyle(cell3);
+        cell3.style.display = 'flex';
+        cell3.style.justifyContent = 'space-between';
         cell3.style.flex = '1';  // 横幅を均等に設定
         cell3.style.padding = '0 8px';
-        cell3.style.display = 'flex';
         cell3.style.alignItems = 'center';
-        cell3.style.justifyContent = 'flex-end';
+        // 左寄せのテキストを作成
+        const cell3Left = document.createElement('span');
+        cell3Left.textContent = '合計スコア:';
+        cell3Left.style.color = 'rgba(255, 255, 255, 0.45)';
+        cell3Left.style.textAlign = 'left';
+        cell3.appendChild(cell3Left);
+        // 右寄せのテキストを作成
+        const cell3Right = document.createElement('span');
+        const truncatedScore = Math.floor(Number(scores) * 100) / 100;
+        cell3Right.textContent = truncatedScore.toFixed(2);
+        applyOriginStyle(cell3Right);
+        cell3Right.style.textAlign = 'right'; // 右寄せ
+        cell3.appendChild(cell3Right);
         row1.appendChild(cell3);
 
         // 2行目を作成
@@ -307,17 +317,28 @@ document.addEventListener('DOMContentLoaded', () => {
         row2.style.width = '100%';  // 横幅100%にする
         for (let col = 0; col < 5; col++) {
             const cell = document.createElement('div');
-            const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
-            cell.textContent = truncatedScore.toFixed(2);
-            applyOriginStyle(cell);
-            cell.style.flex = '1';  // 横幅を均等に設定
-            cell.style.padding = '8px';
             cell.style.display = 'flex';
+            cell.style.justifyContent = 'space-between';
+            cell.style.flex = '1';
+            cell.style.padding = '8px';
             cell.style.alignItems = 'center';
-            cell.style.justifyContent = 'flex-end';
             if(col < 4){
                 cell.style.marginRight = '12px';
             }
+
+            // 左寄せのテキストを作成
+            const cellLeft = document.createElement('span');
+            cellLeft.textContent = 'スコア:';
+            cellLeft.style.color = 'rgba(255, 255, 255, 0.45)';
+            cellLeft.style.textAlign = 'left';
+            cell.appendChild(cellLeft);
+            // 右寄せのテキストを作成
+            const cellRight = document.createElement('span');
+            const truncatedScore = Math.floor(Number(scoreList[col]) * 100) / 100;
+            cellRight.textContent = truncatedScore.toFixed(2);
+            applyOriginStyle(cellRight);
+            cellRight.style.textAlign = 'right';
+            cell.appendChild(cellRight);
             row2.appendChild(cell);
         }
 
