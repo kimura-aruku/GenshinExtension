@@ -17,7 +17,7 @@ let relicListElement;
 
 // 追加ステータス親要素
 /** @type {HTMLElement | null} */
-let subPropsElement;
+let subPropListElement;
 
 // 追加ステータス一覧
 /** @type {string[]} */
@@ -60,23 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-
     // 監視のコールバック
     const callback = (mutationsList, observer) => {
         for (let mutation of mutationsList) {
             if (mutation.target.id === MY_ID) {
                 continue;
             }
-            if(observer === subPropsElementObserve){
+            if(observer === subPropsElementObserve && (mutation.type === 'childList' || mutation.type === 'attributes')){
                 console.log('追加ステータスの変更を検知したので再描画');
-            } else if(observer === basicInfoElementObserve){
+                reDraw();
+            } else if(observer === basicInfoElementObserve && mutation.type === 'attributes'){
                 console.log('キャラ情報の変更を検知したので再描画');
-            }
-            if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                console.log('要素が変更されたので再描画');
-                console.log(`変更された要素:`, mutation.target);
-                console.log(`変更された属性:`, mutation.attributeName);
                 reDraw();
             }
         }
@@ -88,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
         attributes: true,           // 属性の変更を監視
         subtree: true,              // 子孫要素も監視対象にする
         characterData: true,        // テキストノードの変更を監視
-        characterDataOldValue: true, // 変更前のテキストも取得
-        attributeOldValue: true,    // 属性変更前の値も取得
+        characterDataOldValue: false, // 変更前のテキストも取得
+        attributeOldValue: false,    // 属性変更前の値も取得
     };
 
     // 監視を再設定する関数
@@ -102,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             basicInfoElementObserve.disconnect();
         }
         subPropsElementObserve = new MutationObserver(callback);
-        subPropsElementObserve.observe(subPropsElement, config);
+        subPropsElementObserve.observe(subPropListElement, config);
         
         basicInfoElementObserve = new MutationObserver(callback);
         basicInfoElementObserve.observe(basicInfoElement, config);
@@ -133,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 追加ステータスのキャッシュ
     function cacheSubPropNames(){
-        const propItemElements = subPropsElement.querySelectorAll('.prop-item');
+        const propItemElements = subPropListElement.querySelectorAll('.prop-item');
         subPropNames = Array.from(propItemElements).map(element => {
             const childText = Array.from(element.childNodes)
                 .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') // テキストノードかつ空白ではない
@@ -314,14 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('再描画時に聖遺物リストが見えないため再取得');
             relicListElement = await waitForElement('.relic-list');
         }
-        if(!isElementVisible(subPropsElement)){
+        if(!isElementVisible(subPropListElement)){
             console.log('再描画時に追加ステータスが見えないため再取得');
             if (subPropsElementObserve) {
                 subPropsElementObserve.disconnect();
             }
-            subPropsElement = await waitForElement('.sub-props');
+            const subPropsElement = await waitForElement('.sub-props');
+            subPropListElement = subPropsElement.querySelector('.prop-list');
             subPropsElementObserve = new MutationObserver(callback);
-            subPropsElementObserve.observe(subPropsElement, config);
+            subPropsElementObserve.observe(subPropListElement, config);
         }
         if(!isElementVisible(basicInfoElement)){
             console.log('再描画時にキャラ情報が見えないため再取得');
@@ -338,7 +333,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 最初に実行
     async function setup(){
         relicListElement = await waitForElement('.relic-list');
-        subPropsElement = await waitForElement('.sub-props');
+        const subPropsElement = await waitForElement('.sub-props');
+        subPropListElement = subPropsElement.querySelector('.prop-list');
         const finalTextElement = await waitForElement('.final-text');
         finalTextStyle = window.getComputedStyle(finalTextElement);
         basicInfoElement = await waitForElement('.basic-info');
@@ -354,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('エラー:', error);
         }
     }
+
     console.log('拡張テスト開始');
     firstDraw();
 
