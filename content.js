@@ -76,10 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 continue;
             }
             if(observer === subPropsElementObserve && (mutation.type === 'childList' || mutation.type === 'attributes')){
-                console.log('追加ステータスの変更を検知したので再描画');
                 reDraw();
             } else if(observer === basicInfoElementObserve && mutation.type === 'attributes'){
-                console.log('キャラ情報の変更を検知したので再描画');
                 reDraw();
             }
         }
@@ -356,7 +354,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 描画
     function draw(){
-        console.log('描画開始');
         const parent = relicListElement.parentElement;
         if (parent && relicListElement) {
             // 追加ステータス名取得
@@ -364,14 +361,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const existingNode = document.getElementById(MY_ID);
             // 既存の要素があれば削除
             if (existingNode) {
-                console.log('自作要素がすでにあったため削除');
                 const parent = relicListElement.parentElement;
                 parent.removeChild(existingNode);
             }
             const newDiv = createScoreElement();
             parent.insertBefore(newDiv, relicListElement);
         }else{
-            console.log('聖遺物要素の親が取得できなかった');
+            // TODO:エラーハンドリング
         }
     }
 
@@ -379,11 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 非同期処理を分離
     async function reDraw() {
         if(!isElementVisible(relicListElement)){
-            console.log('再描画時に聖遺物リストが見えないため再取得');
             relicListElement = await waitForElement('.relic-list');
         }
         if(!isElementVisible(subPropListElement)){
-            console.log('再描画時に追加ステータスが見えないため再取得');
             if (subPropsElementObserve) {
                 subPropsElementObserve.disconnect();
             }
@@ -393,7 +387,6 @@ document.addEventListener('DOMContentLoaded', () => {
             subPropsElementObserve.observe(subPropListElement, config);
         }
         if(!isElementVisible(basicInfoElement)){
-            console.log('再描画時にキャラ情報が見えないため再取得');
             if (basicInfoElementObserve) {
                 basicInfoElementObserve.disconnect();
             }
@@ -469,6 +462,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    console.log('拡張テスト開始');
     firstDraw();
 });
