@@ -1,38 +1,38 @@
-const MY_ID = 'alk-element';
-
-// 聖遺物親要素
-/** @type {HTMLElement | null} */
-let relicListElement;
-
-// 追加ステータス親要素
-/** @type {HTMLElement | null} */
-let subPropListElement;
-
-// 追加ステータス一覧
-/** @type {string[]} */
-let subPropNames = [];
-
-// キャラの基本情報要素
-/** @type {HTMLElement | null} */
-let basicInfoElement;
-
-// スタイルそのものを保持しているとバグったので辞書にキャッシュ
-// オリジナルの数値スタイルオブジェクト
-/** @type {{ [key: string]: string }} */
-let numberStyleObject = {};
-
-// オリジナルの説明文スタイルオブジェクト
-/** @type {{ [key: string]: string }} */
-let descriptionStyleObject = {};
-
-// オリジナルのラベルスタイルオブジェクト
-/** @type {{ [key: string]: string }} */
-let labelStyleObject = {};
-
-// 追加ステータスとキャラ情報の監視オブジェクト
-let subPropsElementObserve, basicInfoElementObserve;
-
 document.addEventListener('DOMContentLoaded', () => {
+    const MY_ID = 'alk-element';
+
+    // 聖遺物親要素
+    /** @type {HTMLElement | null} */
+    let relicListElement;
+
+    // 追加ステータス親要素
+    /** @type {HTMLElement | null} */
+    let subPropListElement;
+
+    // 追加ステータス一覧
+    /** @type {string[]} */
+    let subPropNames = [];
+
+    // キャラの基本情報要素
+    /** @type {HTMLElement | null} */
+    let basicInfoElement;
+
+    // スタイルそのものを保持しているとバグったので辞書にキャッシュ
+    // オリジナルの数値スタイルオブジェクト
+    /** @type {{ [key: string]: string }} */
+    let numberStyleObject = {};
+
+    // オリジナルの説明文スタイルオブジェクト
+    /** @type {{ [key: string]: string }} */
+    let descriptionStyleObject = {};
+
+    // オリジナルのラベルスタイルオブジェクト
+    /** @type {{ [key: string]: string }} */
+    let labelStyleObject = {};
+
+    // 追加ステータスとキャラ情報の監視オブジェクト
+    let subPropsElementObserve, basicInfoElementObserve;
+
     // 要素取得
     function waitForElement(selector) {
         return new Promise((resolve, reject) => {
