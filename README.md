@@ -1,28 +1,26 @@
-# スコア計算 Chrome 拡張
+# スコア計算 Chrome拡張
 
-このChrome拡張は、[【原神】戦績](https://act.hoyolab.com/app/community-game-records-sea/index.html) 上でスコア計算を行い、その結果をページに追加する機能を提供します。計算方法は、普及された計算方式ではなく、厳密な計算方式を採用しています。
+このChrome拡張は[【原神】戦績](https://act.hoyolab.com/app/community-game-records-sea/index.html) 上でスコア計算を行い、その結果をページに追加する機能を提供します。
 
 ## 特徴
 
-- **厳密なスコア計算**：普及したスコア計算方式※1ではなく、正確な計算方式※2を使用して結果を算出します。  
-※1 会心ダメージ : 会心率 : 攻撃力%（HP%) = 1 : 2 : 1  
-※2 会心ダメージ : 会心率 : 攻撃力%（HP%) = 1 : 2 : 1.333...  
+- **厳密なスコア計算**：普及したスコア計算方式（※1）ではなく、正確な計算方式（※2）を使用して結果を算出します。  
+<small>※1 会心ダメージ : 会心率 : 攻撃力%（HP%) = 1 : 2 : 1 </small>  
+<small>※2 会心ダメージ : 会心率 : 攻撃力%（HP%) = 1 : 2 : 1.333...</small>  
 
 - **汎用性**：公式ページ内の「ハイライトするステータスの選択」から選んだ「追加ステータス」を加点対象とするため、HPアタッカー、サポーターなど、全てのキャラクターで利用することができます。
 
 - **結果表示**：計算結果は [【原神】戦績](https://act.hoyolab.com/app/community-game-records-sea/index.html) 上に表示されます。
 <div style="margin-left:20px;">
    <figure>
-      <figcaption style="opacity:0.75;">導入前のイメージ</figcaption>
+      <figcaption><small>導入前のイメージ</small></figcaption>
       <img src="Images/before.png" alt="拡張導入前のイメージ">
    </figure>
    <figure>
-      <figcaption style="opacity:0.75;">導入後のイメージ</figcaption>
+      <figcaption><small>導入後のイメージ</small></figcaption>
       <img src="Images/after.png" alt="拡張導入後のイメージ">
    </figure>
-   <br>
 </div>
-
 
 - **Chrome拡張として動作**：Chromeブラウザで動作する拡張機能です。
 
@@ -32,7 +30,7 @@
 
 1. GitHub から拡張機能をダウンロードします。
    - リポジトリページ: `https://github.com/kimura-aruku/GenshinExtension`
-   - **[Download ZIP](https://github.com/kimura-aruku/GenshinExtension/archive/main.zip)** ボタンをクリックして、拡張機能のソースコードをダウンロードします。
+   - **[Download ZIP](https://github.com/kimura-aruku/GenshinExtension/archive/main.zip)** ボタンをクリックし、拡張機能のソースコードをダウンロードします。
 
 2. ダウンロードした ZIP ファイルを解凍し、その中のフォルダを任意の場所に保存します。
 
@@ -42,7 +40,7 @@
 
 5. **「パッケージ化されていない拡張機能を読み込む」** ボタンをクリックし、解凍した拡張機能のフォルダを選択します。
 
-6. インストールが完了すると、Chrome に拡張機能が追加されます。
+6. インストールが完了すると、Chromeに拡張機能が追加されます。
 
 ## 使用方法
 
