@@ -374,7 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     // 非同期処理を分離
     async function reDraw() {
         if(!isElementVisible(relicListElement)){
