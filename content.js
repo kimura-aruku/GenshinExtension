@@ -1,14 +1,3 @@
-const HP = 'HP';
-const HP_PERCENT = 'HPパーセンテージ';
-const ATK = '攻撃力';
-const ATK_PERCENT = '攻撃力パーセンテージ';
-const DEF = '防御力';
-const DEF_PERCENT = '防御力パーセンテージ';
-const CRIT_RATE = '会心率';
-const CRIT_DMG = '会心ダメージ';
-const ELEMENTAL_MASTERY = '元素熟知';
-const ENERGY_RECHARGE = '元素チャージ効率';
-
 const MY_ID = 'alk-element';
 
 // 聖遺物親要素
@@ -218,8 +207,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スコアにして返す
     function getScore(subPropName, subPropValue){
+        const PROP_NAME = Object.freeze({
+            HP: 'HP',
+            HP_PERCENT: 'HPパーセンテージ',
+            ATK: '攻撃力',
+            ATK_PERCENT: '攻撃力パーセンテージ',
+            DEF: '防御力',
+            DEF_PERCENT: '防御力パーセンテージ',
+            CRIT_RATE: '会心率',
+            CRIT_DMG: '会心ダメージ',
+            ELEMENTAL_MASTERY: '元素熟知',
+            ENERGY_RECHARGE: '元素チャージ効率'
+        });
+
         // 実数かパーセントか判断できない状態
-        const isRealOrPercent = [HP, ATK, DEF].includes(subPropName);
+        const isRealOrPercent = [PROP_NAME.HP, PROP_NAME.ATK, PROP_NAME.DEF]
+            .includes(subPropName);
         if(isRealOrPercent && subPropValue.includes('%')){
             subPropName += 'パーセンテージ';
         }
@@ -230,28 +233,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         switch (subPropName) {
             // 実数はスコア0
-            case HP:
-            case ATK:
-            case DEF:
+            case PROP_NAME.HP:
+            case PROP_NAME.ATK:
+            case PROP_NAME.DEF:
                 return 0;
             // 会心ダメージ
-            case CRIT_DMG:
+            case PROP_NAME.CRIT_DMG:
                 return subPropValue;
             // 会心率
-            case CRIT_RATE:
+            case PROP_NAME.CRIT_RATE:
                 return subPropValue * 2.0;
             // 攻撃力%、HP%
-            case ATK_PERCENT:
-            case HP_PERCENT:
+            case PROP_NAME.ATK_PERCENT:
+            case PROP_NAME.HP_PERCENT:
                 return (62.2/46.6) * subPropValue;
             // 防御%
-            case DEF_PERCENT:
+            case PROP_NAME.DEF_PERCENT:
                 return (62.2/58.3) * subPropValue;
             // 元素熟知
-            case ELEMENTAL_MASTERY:
+            case PROP_NAME.ELEMENTAL_MASTERY:
                 return (62.2/187.0) * subPropValue;
             // 元素チャージ効率
-            case ENERGY_RECHARGE:
+            case PROP_NAME.ENERGY_RECHARGE:
                 return (62.2/51.8) * subPropValue;
             default:
                 return 0;
