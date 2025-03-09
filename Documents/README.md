@@ -11,6 +11,18 @@
 - **汎用性**：公式ページ内の「ハイライトするステータスの選択」から選んだ「追加ステータス」を加点対象とするため、HPアタッカー、サポーターなど、全てのキャラクターで利用することができます。
 
 - **結果表示**：計算結果は [【原神】戦績](https://act.hoyolab.com/app/community-game-records-sea/index.html) 上に表示されます。
+<div style="margin-left:20px;">
+   <figure>
+      <figcaption style="opacity:0.75;">導入前のイメージ</figcaption>
+      <img src="Images/before.png" alt="拡張導入前のイメージ">
+   </figure>
+   <figure>
+      <figcaption style="opacity:0.75;">導入後のイメージ</figcaption>
+      <img src="Images/after.png" alt="拡張導入後のイメージ">
+   </figure>
+   <br>
+</div>
+
 
 - **Chrome拡張として動作**：Chromeブラウザで動作する拡張機能です。
 
