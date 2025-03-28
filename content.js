@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 左寄せのテキストを作成
         const cell3Left = document.createElement('span');
         applyOriginalLabelStyle(cell3Left);
-        cell3Left.textContent = '合計スコア:';
+        cell3Left.textContent = '合計スコア';
         cell3.appendChild(cell3Left);
         // 右寄せのテキストを作成
         const cell3Right = document.createElement('span');
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 左寄せのテキストを作成
             const cellLeft = document.createElement('span');
             applyOriginalLabelStyle(cellLeft);
-            cellLeft.textContent = 'スコア:';
+            cellLeft.textContent = 'スコア';
             cell.appendChild(cellLeft);
             // 右寄せのテキストを作成
             const cellRight = document.createElement('span');
@@ -364,7 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const existingNode = document.getElementById(MY_ID);
             // 既存の要素があれば削除
             if (existingNode) {
-                const parent = relicListElement.parentElement;
                 parent.removeChild(existingNode);
             }
             const newDiv = createScoreElement();
