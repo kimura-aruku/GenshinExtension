@@ -406,10 +406,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const artifactHeaderElement = await waitForElement('.artifact-info header');
         const descriptionElements = artifactHeaderElement.querySelectorAll('div');
         let descriptionElement = null;
-        const searchKeyForDescription = 'ハイライトされたステータス';
         for (let el of descriptionElements) {
             if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                if (el.textContent.includes(searchKeyForDescription)) {
+                if (el.textContent.includes('ハイライトされたステータス') || el.textContent.includes('初めてアクセスした') ) {
                     descriptionElement = el;
                     break;
                 }
