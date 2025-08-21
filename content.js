@@ -1,5 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Chrome拡張の要素ID
     const MY_ID = 'alk-element';
+    
+    // オリジナルページの要素セレクタ（クラス名変更時はここを修正）
+    const SELECTORS = Object.freeze({
+        // 基本情報・ステータス関連
+        BASIC_INFO: '.basic-info',
+        FINAL_TEXT: '.final-text',
+        
+        // 聖遺物関連
+        ARTIFACT_INFO: '.artifact-info',
+        ARTIFACT_INFO_HEADER: '.artifact-info header',
+        RELIC_LIST: '.relic-list',
+        ARTIFACT_SUB_PROP: '.artifact-sub-prop',
+        
+        // 追加ステータス関連
+        SUB_PROPS: '.sub-props',
+        SUB_PROPS_PROP_LIST: '.sub-props .prop-list',
+        
+        // その他
+        SPLIT: '.split'
+    });
 
     // 聖遺物親要素
     /** @type {HTMLElement | null} */
@@ -165,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 上記のいずれか
         const relicElement = relicElements[index];
         // 聖遺物1つあたりが持つサブステータス要素すべて
-        const subPropElements = relicElement.querySelectorAll('.artifact-sub-prop');
+        const subPropElements = relicElement.querySelectorAll(SELECTORS.ARTIFACT_SUB_PROP);
         let score = 0;
         subPropElements.forEach(subPropElement => {
             // テキストノードを取得
@@ -376,13 +397,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 非同期処理を分離
     async function reDraw() {
         if(!isElementVisible(relicListElement)){
-            relicListElement = await waitForElement('.relic-list');
+            relicListElement = await waitForElement(SELECTORS.RELIC_LIST);
         }
         if(!isElementVisible(subPropListElement)){
             if (subPropsElementObserve) {
                 subPropsElementObserve.disconnect();
             }
-            const subPropsElement = await waitForElement('.sub-props');
+            const subPropsElement = await waitForElement(SELECTORS.SUB_PROPS);
             subPropListElement = subPropsElement.querySelector('.prop-list');
             subPropsElementObserve = new MutationObserver(callback);
             subPropsElementObserve.observe(subPropListElement, config);
@@ -391,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (basicInfoElementObserve) {
                 basicInfoElementObserve.disconnect();
             }
-            basicInfoElement = await waitForElement('.basic-info');
+            basicInfoElement = await waitForElement(SELECTORS.BASIC_INFO);
             basicInfoElementObserve = new MutationObserver(callback);
             basicInfoElementObserve.observe(basicInfoElement, config);
         }
@@ -403,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // コピー対象のスタイルプロパティ
         const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         // 説明用のスタイル取得
-        const artifactHeaderElement = await waitForElement('.artifact-info header');
+        const artifactHeaderElement = await waitForElement(SELECTORS.ARTIFACT_INFO_HEADER);
         const descriptionElements = artifactHeaderElement.querySelectorAll('div');
         let descriptionElement = null;
         for (let el of descriptionElements) {
@@ -419,8 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
             descriptionStyleObject[style] = descriptionTextStyle.getPropertyValue(style);
         }
         // 聖遺物要素取得
-        relicListElement = await waitForElement('.relic-list');
-        const subPropsElement = await waitForElement('.sub-props');
+        relicListElement = await waitForElement(SELECTORS.RELIC_LIST);
+        const subPropsElement = await waitForElement(SELECTORS.SUB_PROPS);
         // 項目ラベル用のスタイル取得
         const subPropsElements = subPropsElement.querySelectorAll('p');
         let labelElement = null;
@@ -440,14 +461,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
         // 数値用スタイル取得
-        const finalTextElement = await waitForElement('.final-text');
+        const finalTextElement = await waitForElement(SELECTORS.FINAL_TEXT);
         const finalTextStyle = window.getComputedStyle(finalTextElement);
         for (let style of allowedProperties) {
             numberStyleObject[style] = finalTextStyle.getPropertyValue(style);
         }
 
         // キャラ情報要素取得
-        basicInfoElement = await waitForElement('.basic-info');
+        basicInfoElement = await waitForElement(SELECTORS.BASIC_INFO);
         // 変更監視開始
         setObservers();
     }
