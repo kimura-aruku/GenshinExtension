@@ -1,6 +1,6 @@
 {
     "content_scripts": [ {
-       "js": [ "score-component.js", "content.js" ],
+       "js": [ "config.js", "score-component.js", "content.js" ],
        "matches": [ "https://act.hoyolab.com/app/community-game-records-sea/index.html*" ],
        "run_at": "document_start"
     } ],

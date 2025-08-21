@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Chrome拡張の要素ID
-    const MY_ID = 'alk-element';
+    // Chrome拡張の要素ID（config.jsから取得）
+    const MY_ID = EXTENSION_CONFIG.ELEMENT_ID;
     
     // オリジナルページの要素セレクタ（クラス名変更時はここを修正）
     const SELECTORS = Object.freeze({
@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 attributes: true
             });
 
-            // タイムアウトの設定
+            // タイムアウトの設定（config.jsから取得）
             setTimeout(() => {
                 observer.disconnect();
                 reject(new Error(`Timeout: 要素 ${selector} が見つかりませんでした`));
-            }, 10000);
+            }, EXTENSION_CONFIG.WAIT_TIMEOUT);
         });
     }
 
@@ -226,21 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.assign(element.style, labelStyleObject);
     }
 
-    // スコアにして返す
+    // スコアにして返す（config.jsの定数を使用）
     function getScore(subPropName, subPropValue){
-        const PROP_NAME = Object.freeze({
-            HP: 'HP',
-            HP_PERCENT: 'HPパーセンテージ',
-            ATK: '攻撃力',
-            ATK_PERCENT: '攻撃力パーセンテージ',
-            DEF: '防御力',
-            DEF_PERCENT: '防御力パーセンテージ',
-            CRIT_RATE: '会心率',
-            CRIT_DMG: '会心ダメージ',
-            ELEMENTAL_MASTERY: '元素熟知',
-            ENERGY_RECHARGE: '元素チャージ効率'
-        });
-
         // 実数かパーセントか判断できない状態
         const isRealOrPercent = [PROP_NAME.HP, PROP_NAME.ATK, PROP_NAME.DEF]
             .includes(subPropName);
@@ -257,26 +244,26 @@ document.addEventListener('DOMContentLoaded', () => {
             case PROP_NAME.HP:
             case PROP_NAME.ATK:
             case PROP_NAME.DEF:
-                return 0;
+                return SCORE_MULTIPLIERS.REAL_STATS;
             // 会心ダメージ
             case PROP_NAME.CRIT_DMG:
-                return subPropValue;
+                return subPropValue * SCORE_MULTIPLIERS.CRIT_DMG;
             // 会心率
             case PROP_NAME.CRIT_RATE:
-                return subPropValue * 2.0;
+                return subPropValue * SCORE_MULTIPLIERS.CRIT_RATE;
             // 攻撃力%、HP%
             case PROP_NAME.ATK_PERCENT:
             case PROP_NAME.HP_PERCENT:
-                return (62.2/46.6) * subPropValue;
+                return SCORE_MULTIPLIERS.ATK_PERCENT * subPropValue;
             // 防御%
             case PROP_NAME.DEF_PERCENT:
-                return (62.2/58.3) * subPropValue;
+                return SCORE_MULTIPLIERS.DEF_PERCENT * subPropValue;
             // 元素熟知
             case PROP_NAME.ELEMENTAL_MASTERY:
-                return (62.2/187.0) * subPropValue;
+                return SCORE_MULTIPLIERS.ELEMENTAL_MASTERY * subPropValue;
             // 元素チャージ効率
             case PROP_NAME.ENERGY_RECHARGE:
-                return (62.2/51.8) * subPropValue;
+                return SCORE_MULTIPLIERS.ENERGY_RECHARGE * subPropValue;
             default:
                 return 0;
         }
