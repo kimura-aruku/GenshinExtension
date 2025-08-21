@@ -282,115 +282,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // スコア要素作成
-    function createScoreElement(){
-        const newDiv = document.createElement('div');
-        newDiv.id = MY_ID;
-        // スタイル設定
-        newDiv.style.width = '100%';
-        newDiv.style.display = 'flex';
-        newDiv.style.flexDirection = 'column';
-        newDiv.style.gap = '0';
-        newDiv.style.alignItems = 'center';
+    // スコアコンポーネントのインスタンス
+    const scoreComponent = new ScoreComponent(MY_ID);
 
+    // 描画中フラグ（重複描画防止）
+    let isDrawing = false;
+
+    // スコア要素作成
+    async function createScoreElement(){
         // スコア計算
         let scoreList = [];
-        let scores = 0;
         for (let i = 0; i < 5; i++){
             scoreList[i] = calculateScore(i);
-            scores += Number(scoreList[i]);
         }
-        // 1行目
-        const row1 = document.createElement('div');
-        row1.style.display = 'flex';
-        row1.style.width = '100%';
 
-        // 1行目1列目〜3列目
-        const cell1 = document.createElement('div');
-        cell1.textContent = 'スコアは追加ステータスから算出されます。';
-        applyOriginalDescriptionStyle(cell1);
-        cell1.style.flex = '3';
-        cell1.style.paddingRight = 'calc(8 * 3px + 12 * 3px)';
-        cell1.style.display = 'flex';
-        cell1.style.alignItems = 'center';
-        cell1.style.justifyContent = 'flex-start';
-        cell1.style.marginRight = 'calc(12 * 3px)';
-        row1.appendChild(cell1);
-        
-        // 1行目の4列目
-        const cell2 = document.createElement('div');
-        cell2.style.flex = '1';
-        cell2.style.padding = '0 8px 0 12px';
-        cell2.style.display = 'flex';
-        cell2.style.marginRight = '12px';
-        row1.appendChild(cell2);
+        // スタイル適用関数のオブジェクト
+        const styleAppliers = {
+            applyDescriptionStyle: applyOriginalDescriptionStyle,
+            applyLabelStyle: applyOriginalLabelStyle,
+            applyNumberStyle: applyOriginalNumberStyle
+        };
 
-        // 1行目の5列目
-        const cell3 = document.createElement('div');
-        cell3.style.display = 'flex';
-        cell3.style.justifyContent = 'space-between';
-        cell3.style.flex = '1';
-        cell3.style.padding = '0 8px 0 12px';
-        cell3.style.alignItems = 'center';
-        // 左寄せのテキストを作成
-        const cell3Left = document.createElement('span');
-        applyOriginalLabelStyle(cell3Left);
-        cell3Left.textContent = '合計スコア';
-        cell3.appendChild(cell3Left);
-        // 右寄せのテキストを作成
-        const cell3Right = document.createElement('span');
-        cell3Right.textContent = scores.toFixed(2);
-        applyOriginalNumberStyle(cell3Right);
-        cell3.appendChild(cell3Right);
-        row1.appendChild(cell3);
-
-        // 2行目を作成
-        const row2 = document.createElement('div');
-        row2.style.display = 'flex';
-        row2.style.width = '100%';
-        for (let col = 0; col < 5; col++) {
-            const cell = document.createElement('div');
-            cell.style.display = 'flex';
-            cell.style.justifyContent = 'space-between';
-            cell.style.flex = '1';
-            cell.style.padding = '10px 8px 10px 12px';
-            cell.style.alignItems = 'center';
-            if(col < 4){
-                cell.style.marginRight = '12px';
-            }
-            // 左寄せのテキストを作成
-            const cellLeft = document.createElement('span');
-            applyOriginalLabelStyle(cellLeft);
-            cellLeft.textContent = 'スコア';
-            cell.appendChild(cellLeft);
-            // 右寄せのテキストを作成
-            const cellRight = document.createElement('span');
-            cellRight.textContent = scoreList[col].toFixed(2);
-            applyOriginalNumberStyle(cellRight);
-            cell.appendChild(cellRight);
-            row2.appendChild(cell);
-        }
-        // テーブルに行を追加
-        newDiv.appendChild(row1);
-        newDiv.appendChild(row2);
-        return newDiv;
+        // スコアコンポーネントを使用して要素作成
+        return await scoreComponent.createScoreElement(scoreList, styleAppliers);
     }
 
     // 描画
-    function draw(){
-        const parent = relicListElement.parentElement;
-        if (parent && relicListElement) {
-            // 追加ステータス名取得
-            cacheSubPropNames();
-            const existingNode = document.getElementById(MY_ID);
-            // 既存の要素があれば削除
-            if (existingNode) {
-                parent.removeChild(existingNode);
+    async function draw(){
+        // 既に描画中の場合はスキップ
+        if (isDrawing) {
+            return;
+        }
+        
+        isDrawing = true;
+        
+        try {
+            const parent = relicListElement.parentElement;
+            if (parent && relicListElement) {
+                // 追加ステータス名取得
+                cacheSubPropNames();
+                const existingNode = document.getElementById(MY_ID);
+                // 既存の要素があれば削除
+                if (existingNode) {
+                    parent.removeChild(existingNode);
+                }
+                
+                // 重複チェック: 削除後に再度確認
+                const duplicateCheck = document.getElementById(MY_ID);
+                if (duplicateCheck) {
+                    duplicateCheck.remove();
+                }
+                
+                const newDiv = await createScoreElement();
+                parent.insertBefore(newDiv, relicListElement);
+            } else {
+                console.error('スコア表示の挿入に必要な親要素または聖遺物リスト要素が見つかりません。');
             }
-            const newDiv = createScoreElement();
-            parent.insertBefore(newDiv, relicListElement);
-        }else{
-            // TODO:エラーハンドリング
+        } catch (error) {
+            console.error('スコア要素の作成に失敗しました:', error);
+            // フォールバック: エラーメッセージを表示
+            const parent = relicListElement?.parentElement;
+            if (parent) {
+                const errorDiv = document.createElement('div');
+                errorDiv.id = MY_ID;
+                errorDiv.textContent = 'スコア表示の読み込みに失敗しました。';
+                errorDiv.style.color = 'red';
+                errorDiv.style.padding = '10px';
+                parent.insertBefore(errorDiv, relicListElement);
+            }
+        } finally {
+            // 描画完了フラグをリセット
+            isDrawing = false;
         }
     }
 
@@ -416,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
             basicInfoElementObserve = new MutationObserver(callback);
             basicInfoElementObserve.observe(basicInfoElement, config);
         }
-        draw();
+        await draw();
     }
 
     // 最初に実行
@@ -477,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function firstDraw(){
         try {
             await setup();
-            draw();
+            await draw();
         } catch (error) {
             console.error('エラー:', error);
         }

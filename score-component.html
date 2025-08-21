@@ -1,0 +1,61 @@
+<!-- スコア表示コンポーネントのHTMLテンプレート -->
+<div class="score-display" style="width: 100%; display: flex; flex-direction: column; gap: 0; align-items: center;">
+  <!-- 1行目: 説明文と合計スコア -->
+  <div class="score-header" style="display: flex; width: 100%;">
+    <!-- 説明文 -->
+    <div class="score-description" 
+         style="flex: 3; padding-right: calc(8 * 3px + 12 * 3px); display: flex; align-items: center; justify-content: flex-start; margin-right: calc(12 * 3px);">
+      スコアは追加ステータスから算出されます。
+    </div>
+    
+    <!-- 空のセル -->
+    <div class="score-spacer" 
+         style="flex: 1; padding: 0 8px 0 12px; display: flex; margin-right: 12px;">
+    </div>
+    
+    <!-- 合計スコア -->
+    <div class="score-total" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 0 8px 0 12px; align-items: center;">
+      <span class="score-total-label">合計スコア</span>
+      <span class="score-total-value" data-total-score="0.00">0.00</span>
+    </div>
+  </div>
+
+  <!-- 2行目: 個別聖遺物のスコア -->
+  <div class="score-details" style="display: flex; width: 100%;">
+    <!-- 花 -->
+    <div class="score-item" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-item-label">スコア</span>
+      <span class="score-item-value" data-item-score="0">0.00</span>
+    </div>
+    
+    <!-- 羽 -->
+    <div class="score-item" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-item-label">スコア</span>
+      <span class="score-item-value" data-item-score="1">0.00</span>
+    </div>
+    
+    <!-- 砂 -->
+    <div class="score-item" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-item-label">スコア</span>
+      <span class="score-item-value" data-item-score="2">0.00</span>
+    </div>
+    
+    <!-- 杯 -->
+    <div class="score-item" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-item-label">スコア</span>
+      <span class="score-item-value" data-item-score="3">0.00</span>
+    </div>
+    
+    <!-- 冠 -->
+    <div class="score-item" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center;">
+      <span class="score-item-label">スコア</span>
+      <span class="score-item-value" data-item-score="4">0.00</span>
+    </div>
+  </div>
+</div>

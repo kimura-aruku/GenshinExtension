@@ -1,8 +1,12 @@
 {
     "content_scripts": [ {
-       "js": [ "content.js" ],
+       "js": [ "score-component.js", "content.js" ],
        "matches": [ "https://act.hoyolab.com/app/community-game-records-sea/index.html*" ],
        "run_at": "document_start"
+    } ],
+    "web_accessible_resources": [ {
+       "resources": [ "score-component.html" ],
+       "matches": [ "https://act.hoyolab.com/*" ]
     } ],
     "description": "戦績画面で追加ステータスを基準にスコア計算をする拡張（最大スコア＝70*5）",
     "manifest_version": 3,
