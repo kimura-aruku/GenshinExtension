@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // タイムアウトの設定（config.jsから取得）
             setTimeout(() => {
                 observer.disconnect();
-                reject(new Error(`Timeout: 要素 ${selector} が見つかりませんでした`));
+                reject(new Error(chrome.i18n.getMessage('errorTimeout', selector)));
             }, EXTENSION_CONFIG.WAIT_TIMEOUT);
         });
     }
@@ -323,16 +323,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newDiv = await createScoreElement();
                 parent.insertBefore(newDiv, relicListElement);
             } else {
-                console.error('スコア表示の挿入に必要な親要素または聖遺物リスト要素が見つかりません。');
+                console.error(chrome.i18n.getMessage('errorRequiredElementsNotFound'));
             }
         } catch (error) {
-            console.error('スコア要素の作成に失敗しました:', error);
+            console.error(chrome.i18n.getMessage('errorScoreElementCreationFailed'), error);
             // フォールバック: エラーメッセージを表示
             const parent = relicListElement?.parentElement;
             if (parent) {
                 const errorDiv = document.createElement('div');
                 errorDiv.id = MY_ID;
-                errorDiv.textContent = 'スコア表示の読み込みに失敗しました。';
+                errorDiv.textContent = chrome.i18n.getMessage('errorScoreDisplayLoadFailed');
                 errorDiv.style.color = 'red';
                 errorDiv.style.padding = '10px';
                 parent.insertBefore(errorDiv, relicListElement);
@@ -378,7 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let descriptionElement = null;
         for (let el of descriptionElements) {
             if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                if (el.textContent.includes('ハイライトされたステータス') || el.textContent.includes('初めてアクセスした') ) {
+                if (el.textContent.includes(chrome.i18n.getMessage('setupKeywordHighlightedStats')) || 
+                    el.textContent.includes(chrome.i18n.getMessage('setupKeywordFirstAccess')) ) {
                     descriptionElement = el;
                     break;
                 }
@@ -394,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 項目ラベル用のスタイル取得
         const subPropsElements = subPropsElement.querySelectorAll('p');
         let labelElement = null;
-        const searchKeyForLabel = '追加ステータス';
+        const searchKeyForLabel = chrome.i18n.getMessage('setupKeywordAdditionalStats');
         for (let el of subPropsElements) {
             if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
                 if (el.textContent.includes(searchKeyForLabel)) {
@@ -428,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await setup();
             await draw();
         } catch (error) {
-            console.error('エラー:', error);
+            console.error(chrome.i18n.getMessage('errorGeneral'), error);
         }
     }
 

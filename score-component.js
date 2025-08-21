@@ -23,7 +23,7 @@ class ScoreComponent {
             this.templateCache = await response.text();
             return this.templateCache;
         } catch (error) {
-            console.error('HTMLテンプレートの読み込みに失敗しました:', error);
+            console.error(chrome.i18n.getMessage('errorTemplateLoadFailed'), error);
             // フォールバック：最小限のHTMLを返す
             return this.getFallbackTemplate();
         }
@@ -36,9 +36,9 @@ class ScoreComponent {
     getFallbackTemplate() {
         return `
             <div class="score-display" style="width: 100%; display: flex; flex-direction: column;">
-                <div>スコア表示コンポーネントの読み込みに失敗しました。</div>
+                <div>${chrome.i18n.getMessage('errorScoreDisplayLoadFailed')}</div>
                 <div class="score-total">
-                    <span>合計スコア: </span>
+                    <span>${chrome.i18n.getMessage('totalScore')}: </span>
                     <span data-total-score="0.00">0.00</span>
                 </div>
             </div>
@@ -61,11 +61,14 @@ class ScoreComponent {
         // メインのスコア表示要素を取得
         const scoreElement = tempContainer.querySelector('.score-display');
         if (!scoreElement) {
-            throw new Error('スコア表示要素が見つかりませんでした');
+            throw new Error(chrome.i18n.getMessage('errorScoreElementNotFound'));
         }
 
         // IDを設定
         scoreElement.id = this.elementId;
+
+        // 国際化メッセージを適用
+        this.applyI18nMessages(scoreElement);
 
         // スコアデータを更新
         this.updateScores(scoreElement, scoreList);
@@ -74,6 +77,22 @@ class ScoreComponent {
         this.applyStyles(scoreElement, styleAppliers);
 
         return scoreElement;
+    }
+
+    /**
+     * 国際化メッセージをHTMLテンプレートに適用する
+     * @param {HTMLElement} element - スコア表示要素
+     */
+    applyI18nMessages(element) {
+        // data-i18n属性を持つ全ての要素を取得してメッセージを適用
+        const i18nElements = element.querySelectorAll('[data-i18n]');
+        i18nElements.forEach(el => {
+            const messageKey = el.getAttribute('data-i18n');
+            const message = chrome.i18n.getMessage(messageKey);
+            if (message) {
+                el.textContent = message;
+            }
+        });
     }
 
     /**

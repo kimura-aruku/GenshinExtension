@@ -1,0 +1,133 @@
+{
+  "extensionName": {
+    "message": "原神スコア計算機",
+    "description": "Chrome拡張の名前"
+  },
+  "extensionDescription": {
+    "message": "戦績画面で追加ステータスを基準にスコア計算をする拡張（最大スコア＝70*5）",
+    "description": "Chrome拡張の説明"
+  },
+  "extensionShortName": {
+    "message": "スコア計算機",
+    "description": "Chrome拡張の短縮名"
+  },
+
+  "scoreDescription": {
+    "message": "スコアは追加ステータスから算出されます。",
+    "description": "スコア表示UIの説明文"
+  },
+  "totalScore": {
+    "message": "合計スコア",
+    "description": "合計スコアのラベル"
+  },
+  "itemScore": {
+    "message": "スコア",
+    "description": "個別アイテムのスコアラベル"
+  },
+  
+  "errorScoreDisplayLoadFailed": {
+    "message": "スコア表示の読み込みに失敗しました。",
+    "description": "スコア表示コンポーネント読み込みエラー"
+  },
+  "errorTemplateLoadFailed": {
+    "message": "HTMLテンプレートの読み込みに失敗しました:",
+    "description": "HTMLテンプレート読み込みエラー"
+  },
+  "errorScoreElementNotFound": {
+    "message": "スコア表示要素が見つかりませんでした",
+    "description": "スコア表示要素が見つからない場合のエラー"
+  },
+  "errorScoreElementCreationFailed": {
+    "message": "スコア要素の作成に失敗しました:",
+    "description": "スコア要素作成の一般的なエラー"
+  },
+  "errorRequiredElementsNotFound": {
+    "message": "スコア表示の挿入に必要な親要素または聖遺物リスト要素が見つかりません。",
+    "description": "必要な要素が見つからない場合のエラー"
+  },
+  "errorTimeout": {
+    "message": "Timeout: 要素 $selector$ が見つかりませんでした",
+    "description": "要素取得のタイムアウトエラー",
+    "placeholders": {
+      "selector": {
+        "content": "$1",
+        "example": ".relic-list"
+      }
+    }
+  },
+  "errorGeneral": {
+    "message": "エラー:",
+    "description": "一般的なエラーメッセージのプレフィックス"
+  },
+
+  "statHP": {
+    "message": "HP",
+    "description": "HPステータス名"
+  },
+  "statHPPercent": {
+    "message": "HPパーセンテージ",
+    "description": "HP%ステータス名"
+  },
+  "statATK": {
+    "message": "攻撃力",
+    "description": "攻撃力ステータス名"
+  },
+  "statATKPercent": {
+    "message": "攻撃力パーセンテージ",
+    "description": "攻撃力%ステータス名"
+  },
+  "statDEF": {
+    "message": "防御力",
+    "description": "防御力ステータス名"
+  },
+  "statDEFPercent": {
+    "message": "防御力パーセンテージ",
+    "description": "防御力%ステータス名"
+  },
+  "statCritRate": {
+    "message": "会心率",
+    "description": "会心率ステータス名"
+  },
+  "statCritDMG": {
+    "message": "会心ダメージ",
+    "description": "会心ダメージステータス名"
+  },
+  "statElementalMastery": {
+    "message": "元素熟知",
+    "description": "元素熟知ステータス名"
+  },
+  "statEnergyRecharge": {
+    "message": "元素チャージ効率",
+    "description": "元素チャージ効率ステータス名"
+  },
+
+  "scoreMethodStrictName": {
+    "message": "厳密型",
+    "description": "厳密型スコア計算方式の名前"
+  },
+  "scoreMethodStrictDescription": {
+    "message": "会心ダメージ:会心率:攻撃力% = 1:2:1.333...",
+    "description": "厳密型スコア計算方式の説明"
+  },
+  "scoreMethodPopularName": {
+    "message": "普及型",
+    "description": "普及型スコア計算方式の名前"
+  },
+  "scoreMethodPopularDescription": {
+    "message": "会心ダメージ:会心率:攻撃力% = 1:2:1",
+    "description": "普及型スコア計算方式の説明"
+  },
+
+  "setupKeywordHighlightedStats": {
+    "message": "ハイライトされたステータス",
+    "description": "setup関数でハイライトされたステータスの検索キーワード"
+  },
+  "setupKeywordFirstAccess": {
+    "message": "初めてアクセスした",
+    "description": "setup関数で初回アクセスの検索キーワード"
+  },
+  "setupKeywordAdditionalStats": {
+    "message": "追加ステータス",
+    "description": "setup関数で追加ステータスの検索キーワード"
+  }
+}

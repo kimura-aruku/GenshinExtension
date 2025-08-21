@@ -4,18 +4,18 @@
  * 将来的に複数のスコア計算方式を切り替え可能にする
  */
 
-// ステータス名の定数
+// ステータス名の定数（多言語対応）
 const PROP_NAME = Object.freeze({
-    HP: 'HP',
-    HP_PERCENT: 'HPパーセンテージ',
-    ATK: '攻撃力',
-    ATK_PERCENT: '攻撃力パーセンテージ',
-    DEF: '防御力',
-    DEF_PERCENT: '防御力パーセンテージ',
-    CRIT_RATE: '会心率',
-    CRIT_DMG: '会心ダメージ',
-    ELEMENTAL_MASTERY: '元素熟知',
-    ENERGY_RECHARGE: '元素チャージ効率'
+    HP: chrome.i18n.getMessage('statHP'),
+    HP_PERCENT: chrome.i18n.getMessage('statHPPercent'),
+    ATK: chrome.i18n.getMessage('statATK'),
+    ATK_PERCENT: chrome.i18n.getMessage('statATKPercent'),
+    DEF: chrome.i18n.getMessage('statDEF'),
+    DEF_PERCENT: chrome.i18n.getMessage('statDEFPercent'),
+    CRIT_RATE: chrome.i18n.getMessage('statCritRate'),
+    CRIT_DMG: chrome.i18n.getMessage('statCritDMG'),
+    ELEMENTAL_MASTERY: chrome.i18n.getMessage('statElementalMastery'),
+    ENERGY_RECHARGE: chrome.i18n.getMessage('statEnergyRecharge')
 });
 
 // 各ステータスの最大値（サブステータス）
@@ -33,8 +33,8 @@ const STAT_MAX_VALUES = Object.freeze({
 const SCORE_CALCULATION_METHODS = Object.freeze({
     // 現在の厳密型計算方式（会心ダメージを基準値とする）
     STRICT: {
-        name: '厳密型',
-        description: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...',
+        name: chrome.i18n.getMessage('scoreMethodStrictName'),
+        description: chrome.i18n.getMessage('scoreMethodStrictDescription'),
         baseValue: STAT_MAX_VALUES.CRIT_DMG,  // 62.2を基準値とする
         multipliers: {
             CRIT_RATE: 2.0,  // 会心率は2倍換算
@@ -50,8 +50,8 @@ const SCORE_CALCULATION_METHODS = Object.freeze({
     
     // 将来追加予定の普及型計算方式
     POPULAR: {
-        name: '普及型',
-        description: '会心ダメージ:会心率:攻撃力% = 1:2:1',
+        name: chrome.i18n.getMessage('scoreMethodPopularName'),
+        description: chrome.i18n.getMessage('scoreMethodPopularDescription'),
         baseValue: STAT_MAX_VALUES.CRIT_DMG,  // 62.2を基準値とする
         multipliers: {
             CRIT_RATE: 2.0,  // 会心率は2倍換算
