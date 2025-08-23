@@ -38,18 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
     /** @type {HTMLElement | null} */
     let basicInfoElement;
 
-    // スタイルそのものを保持しているとバグったので辞書にキャッシュ
-    // オリジナルの数値スタイルオブジェクト
-    /** @type {{ [key: string]: string }} */
-    let numberStyleObject = {};
-
-    // オリジナルの説明文スタイルオブジェクト
-    /** @type {{ [key: string]: string }} */
-    let descriptionStyleObject = {};
-
-    // オリジナルのラベルスタイルオブジェクト
-    /** @type {{ [key: string]: string }} */
-    let labelStyleObject = {};
+    // スタイル管理インスタンス（style-manager.jsから読み込み）
+    const styleManager = new StyleManager();
 
     /**
      * DOM監視・検知管理クラス
@@ -306,20 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // 数値オリジナル要素のスタイルをコピー
-    function applyOriginalNumberStyle(element){
-        Object.assign(element.style, numberStyleObject);
-    }
-
-    // 説明文オリジナル要素のスタイルをコピー
-    function applyOriginalDescriptionStyle(element){
-        Object.assign(element.style, descriptionStyleObject);
-    }
-
-    // 項目名オリジナル要素のスタイルをコピー
-    function applyOriginalLabelStyle(element){
-        Object.assign(element.style, labelStyleObject);
-    }
 
     // スコアにして返す（config.jsの定数を使用）
     function getScore(subPropName, subPropValue){
@@ -378,12 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreList[i] = calculateScore(i);
         }
 
-        // スタイル適用関数のオブジェクト
-        const styleAppliers = {
-            applyDescriptionStyle: applyOriginalDescriptionStyle,
-            applyLabelStyle: applyOriginalLabelStyle,
-            applyNumberStyle: applyOriginalNumberStyle
-        };
+        // スタイル適用関数のオブジェクトをStyleManagerから取得
+        const styleAppliers = styleManager.getStyleAppliers();
 
         // スコアコンポーネントを使用して要素作成
         return await scoreComponent.createScoreElement(scoreList, styleAppliers);
@@ -463,52 +435,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 最初に実行
     async function setup(){
-        // コピー対象のスタイルプロパティ
-        const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         // 説明用のスタイル取得
         const artifactHeaderElement = await observerManager.waitForElement(SELECTORS.ARTIFACT_INFO_HEADER);
-        const descriptionElements = artifactHeaderElement.querySelectorAll('div');
-        let descriptionElement = null;
-        for (let el of descriptionElements) {
-            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                if (el.textContent.includes(chrome.i18n.getMessage('setupKeywordHighlightedStats')) || 
-                    el.textContent.includes(chrome.i18n.getMessage('setupKeywordFirstAccess')) ) {
-                    descriptionElement = el;
-                    break;
-                }
-            }
-        }
-        const descriptionTextStyle = window.getComputedStyle(descriptionElement);
-        for (let style of allowedProperties) {
-            descriptionStyleObject[style] = descriptionTextStyle.getPropertyValue(style);
-        }
+        const descriptionSearchKeys = [
+            chrome.i18n.getMessage('setupKeywordHighlightedStats'),
+            chrome.i18n.getMessage('setupKeywordFirstAccess')
+        ];
+        styleManager.findAndSetDescriptionStyle(artifactHeaderElement, descriptionSearchKeys);
+        
         // 聖遺物要素取得
         relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
         const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
+        
         // 項目ラベル用のスタイル取得
-        const subPropsElements = subPropsElement.querySelectorAll('p');
-        let labelElement = null;
         const searchKeyForLabel = chrome.i18n.getMessage('setupKeywordAdditionalStats');
-        for (let el of subPropsElements) {
-            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                if (el.textContent.includes(searchKeyForLabel)) {
-                    labelElement = el;
-                    break;
-                }
-            }
-        }
-        const labelTextStyle = window.getComputedStyle(labelElement);
-        for (let style of allowedProperties) {
-            labelStyleObject[style] = labelTextStyle.getPropertyValue(style);
-        }
+        styleManager.findAndSetLabelStyle(subPropsElement, searchKeyForLabel);
+        
         // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
+        
         // 数値用スタイル取得
         const finalTextElement = await observerManager.waitForElement(SELECTORS.FINAL_TEXT);
-        const finalTextStyle = window.getComputedStyle(finalTextElement);
-        for (let style of allowedProperties) {
-            numberStyleObject[style] = finalTextStyle.getPropertyValue(style);
-        }
+        styleManager.setNumberStyle(finalTextElement);
 
         // キャラ情報要素取得
         basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);
