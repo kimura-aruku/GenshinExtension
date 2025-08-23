@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 追加ステータス関連
         SUB_PROPS: '.sub-props',
         SUB_PROPS_PROP_LIST: '.sub-props .prop-list',
+        PROP_LIST: '.prop-list',
         
         // その他
         SPLIT: '.split'
@@ -417,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 追加ステータス要素の再取得
         if (!isElementVisible(subPropListElement)) {
             const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
-            subPropListElement = subPropsElement.querySelector('.prop-list');
+            subPropListElement = subPropsElement.querySelector(SELECTORS.PROP_LIST);
             observerManager.restartSubPropsObserving(subPropListElement);
         }
         
@@ -470,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 追加ステータス名要素
-        subPropListElement = subPropsElement.querySelector('.prop-list');
+        subPropListElement = subPropsElement.querySelector(SELECTORS.PROP_LIST);
         
         // 数値用スタイル取得
         const finalTextElement = await observerManager.waitForElement(SELECTORS.FINAL_TEXT);
