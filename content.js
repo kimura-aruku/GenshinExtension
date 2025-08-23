@@ -51,73 +51,168 @@ document.addEventListener('DOMContentLoaded', () => {
     /** @type {{ [key: string]: string }} */
     let labelStyleObject = {};
 
-    // 追加ステータスとキャラ情報の監視オブジェクト
-    let subPropsElementObserve, basicInfoElementObserve;
-
-    // 要素取得
-    function waitForElement(selector) {
-        return new Promise((resolve, reject) => {
-            const observer = new MutationObserver((mutationsList, observer) => {
-                const element = document.querySelector(selector);
-                if (element) {
-                    observer.disconnect();
-                    resolve(element);
-                }
-            });
-            // DOMの変更を監視
-            observer.observe(document.body, { 
+    /**
+     * DOM監視・検知管理クラス
+     * MutationObserver関連の機能を統合管理
+     */
+    class ObserverManager {
+        constructor() {
+            // 追加ステータス要素の監視オブジェクト
+            this.subPropsObserver = null;
+            // 基本情報要素の監視オブジェクト
+            this.basicInfoObserver = null;
+            
+            // 監視設定
+            this.observerConfig = Object.freeze({
                 childList: true,
+                attributes: true,
                 subtree: true,
-                attributes: true
+                characterData: true,
+                characterDataOldValue: false,
+                attributeOldValue: false,
             });
+        }
 
-            // タイムアウトの設定（config.jsから取得）
-            setTimeout(() => {
-                observer.disconnect();
-                reject(new Error(chrome.i18n.getMessage('errorTimeout', selector)));
-            }, EXTENSION_CONFIG.WAIT_TIMEOUT);
-        });
+        /**
+         * 要素が見つかるまで待機する
+         * @param {string} selector - セレクタ文字列
+         * @returns {Promise<HTMLElement>} 見つかった要素
+         */
+        waitForElement(selector) {
+            return new Promise((resolve, reject) => {
+                // 既に存在するならそのまま返す
+                const existingElement = document.querySelector(selector);
+                if (existingElement) {
+                    resolve(existingElement);
+                    return;
+                }
+
+                const observer = new MutationObserver((mutationsList, observer) => {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        observer.disconnect();
+                        resolve(element);
+                    }
+                });
+                
+                // DOMの変更を監視
+                observer.observe(document.body, { 
+                    childList: true,
+                    subtree: true,
+                    attributes: true
+                });
+
+                // タイムアウトの設定
+                setTimeout(() => {
+                    observer.disconnect();
+                    reject(new Error(chrome.i18n.getMessage('errorTimeout', selector)));
+                }, EXTENSION_CONFIG.WAIT_TIMEOUT);
+            });
+        }
+
+        /**
+         * 監視コールバック
+         * @param {MutationRecord[]} mutationsList - 変更リスト
+         * @param {MutationObserver} observer - 監視オブジェクト
+         */
+        handleMutations(mutationsList, observer) {
+            for (let mutation of mutationsList) {
+                // 自分の要素の変更は無視
+                if (mutation.target.id === MY_ID) {
+                    continue;
+                }
+                
+                // 追加ステータス要素の監視
+                if (observer === this.subPropsObserver && 
+                    (mutation.type === 'childList' || mutation.type === 'attributes')) {
+                    reDraw();
+                    return;
+                }
+                
+                // キャラクター基本情報の監視
+                if (observer === this.basicInfoObserver && 
+                    mutation.type === 'attributes') {
+                    reDraw();
+                    return;
+                }
+            }
+        }
+
+        /**
+         * 監視を開始する
+         * @param {HTMLElement} subPropElement - 追加ステータス要素
+         * @param {HTMLElement} basicInfoElement - 基本情報要素
+         */
+        startObserving(subPropElement, basicInfoElement) {
+            // 既存の監視を停止
+            this.stopObserving();
+            
+            // 追加ステータス要素の監視
+            if (subPropElement) {
+                this.subPropsObserver = new MutationObserver(
+                    (mutations, observer) => this.handleMutations(mutations, observer)
+                );
+                this.subPropsObserver.observe(subPropElement, this.observerConfig);
+            }
+            
+            // 基本情報要素の監視
+            if (basicInfoElement) {
+                this.basicInfoObserver = new MutationObserver(
+                    (mutations, observer) => this.handleMutations(mutations, observer)
+                );
+                this.basicInfoObserver.observe(basicInfoElement, this.observerConfig);
+            }
+        }
+
+        /**
+         * 全ての監視を停止する
+         */
+        stopObserving() {
+            if (this.subPropsObserver) {
+                this.subPropsObserver.disconnect();
+                this.subPropsObserver = null;
+            }
+            if (this.basicInfoObserver) {
+                this.basicInfoObserver.disconnect();
+                this.basicInfoObserver = null;
+            }
+        }
+
+        /**
+         * 追加ステータス監視を再開する
+         * @param {HTMLElement} subPropElement - 追加ステータス要素
+         */
+        restartSubPropsObserving(subPropElement) {
+            if (this.subPropsObserver) {
+                this.subPropsObserver.disconnect();
+            }
+            if (subPropElement) {
+                this.subPropsObserver = new MutationObserver(
+                    (mutations, observer) => this.handleMutations(mutations, observer)
+                );
+                this.subPropsObserver.observe(subPropElement, this.observerConfig);
+            }
+        }
+
+        /**
+         * 基本情報監視を再開する
+         * @param {HTMLElement} basicInfoElement - 基本情報要素
+         */
+        restartBasicInfoObserving(basicInfoElement) {
+            if (this.basicInfoObserver) {
+                this.basicInfoObserver.disconnect();
+            }
+            if (basicInfoElement) {
+                this.basicInfoObserver = new MutationObserver(
+                    (mutations, observer) => this.handleMutations(mutations, observer)
+                );
+                this.basicInfoObserver.observe(basicInfoElement, this.observerConfig);
+            }
+        }
     }
 
-    // 監視のコールバック
-    const callback = (mutationsList, observer) => {
-        for (let mutation of mutationsList) {
-            if (mutation.target.id === MY_ID) {
-                continue;
-            }
-            if(observer === subPropsElementObserve && (mutation.type === 'childList' || mutation.type === 'attributes')){
-                reDraw();
-            } else if(observer === basicInfoElementObserve && mutation.type === 'attributes'){
-                reDraw();
-            }
-        }
-    };
-
-    // 監視設定
-    const config = {
-        childList: true,
-        attributes: true,
-        subtree: true,
-        characterData: true,
-        characterDataOldValue: false,
-        attributeOldValue: false,
-    };
-
-    // 監視を再設定する関数
-    function setObservers() {
-        // 既存の監視を解除
-        if (subPropsElementObserve) {
-            subPropsElementObserve.disconnect();
-        }
-        if (basicInfoElementObserve) {
-            basicInfoElementObserve.disconnect();
-        }
-        subPropsElementObserve = new MutationObserver(callback);
-        subPropsElementObserve.observe(subPropListElement, config);
-        
-        basicInfoElementObserve = new MutationObserver(callback);
-        basicInfoElementObserve.observe(basicInfoElement, config);
-    }
+    // 監視管理インスタンス
+    const observerManager = new ObserverManager();
 
     // 要素が画面に表示されている
     function isElementVisible(element) {
@@ -345,26 +440,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 非同期処理を分離
     async function reDraw() {
-        if(!isElementVisible(relicListElement)){
-            relicListElement = await waitForElement(SELECTORS.RELIC_LIST);
+        // 聖遺物リスト要素の再取得
+        if (!isElementVisible(relicListElement)) {
+            relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
         }
-        if(!isElementVisible(subPropListElement)){
-            if (subPropsElementObserve) {
-                subPropsElementObserve.disconnect();
-            }
-            const subPropsElement = await waitForElement(SELECTORS.SUB_PROPS);
+        
+        // 追加ステータス要素の再取得
+        if (!isElementVisible(subPropListElement)) {
+            const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
             subPropListElement = subPropsElement.querySelector('.prop-list');
-            subPropsElementObserve = new MutationObserver(callback);
-            subPropsElementObserve.observe(subPropListElement, config);
+            observerManager.restartSubPropsObserving(subPropListElement);
         }
-        if(!isElementVisible(basicInfoElement)){
-            if (basicInfoElementObserve) {
-                basicInfoElementObserve.disconnect();
-            }
-            basicInfoElement = await waitForElement(SELECTORS.BASIC_INFO);
-            basicInfoElementObserve = new MutationObserver(callback);
-            basicInfoElementObserve.observe(basicInfoElement, config);
+        
+        // 基本情報要素の再取得
+        if (!isElementVisible(basicInfoElement)) {
+            basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);
+            observerManager.restartBasicInfoObserving(basicInfoElement);
         }
+        
         await draw();
     }
 
@@ -373,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // コピー対象のスタイルプロパティ
         const allowedProperties = ['font-size', 'text-align', 'font-family', 'color'];
         // 説明用のスタイル取得
-        const artifactHeaderElement = await waitForElement(SELECTORS.ARTIFACT_INFO_HEADER);
+        const artifactHeaderElement = await observerManager.waitForElement(SELECTORS.ARTIFACT_INFO_HEADER);
         const descriptionElements = artifactHeaderElement.querySelectorAll('div');
         let descriptionElement = null;
         for (let el of descriptionElements) {
@@ -390,8 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
             descriptionStyleObject[style] = descriptionTextStyle.getPropertyValue(style);
         }
         // 聖遺物要素取得
-        relicListElement = await waitForElement(SELECTORS.RELIC_LIST);
-        const subPropsElement = await waitForElement(SELECTORS.SUB_PROPS);
+        relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
+        const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
         // 項目ラベル用のスタイル取得
         const subPropsElements = subPropsElement.querySelectorAll('p');
         let labelElement = null;
@@ -411,16 +504,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
         // 数値用スタイル取得
-        const finalTextElement = await waitForElement(SELECTORS.FINAL_TEXT);
+        const finalTextElement = await observerManager.waitForElement(SELECTORS.FINAL_TEXT);
         const finalTextStyle = window.getComputedStyle(finalTextElement);
         for (let style of allowedProperties) {
             numberStyleObject[style] = finalTextStyle.getPropertyValue(style);
         }
 
         // キャラ情報要素取得
-        basicInfoElement = await waitForElement(SELECTORS.BASIC_INFO);
+        basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);
         // 変更監視開始
-        setObservers();
+        observerManager.startObserving(subPropListElement, basicInfoElement);
     }
 
     // スコア要素作成
