@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ページ言語管理インスタンス（page-locale-manager.jsから読み込み）
     const pageLocaleManager = new PageLocaleManager();
+    
 
     /**
      * DOM監視・検知管理クラス
@@ -503,6 +504,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 最初に実行
     async function setup(){
+        // ストレージから計算方式を読み込み
+        await loadCalculationMethod();
+        
+        // SCORE_MULTIPLIERSを更新（loadCalculationMethodで設定が更新されたため）
+        window.SCORE_MULTIPLIERS = getCurrentScoreMultipliers();
+        
         // 言語選択要素を取得して言語判定
         languageSelectorElement = await observerManager.waitForElement(SELECTORS.LANGUAGE_SELECTOR, (element) => {
             // 文字列が取得できることを追加条件とする
@@ -573,5 +580,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // カスタムイベントリスナー（設定変更時の再描画用）
+    document.addEventListener('genshin-method-changed', async (event) => {
+        console.log('Received method change event:', event.detail.method);
+        try {
+            await draw();
+        } catch (error) {
+            console.error('Failed to redraw after method change:', error);
+        }
+    });
+
     firstDraw();
 });
+
+// popup からのメッセージを受信
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'CALCULATION_METHOD_CHANGED') {
+        handleCalculationMethodChange(message.method);
+        sendResponse({ success: true });
+    }
+});
+
+// 計算方式変更のハンドラ
+async function handleCalculationMethodChange(newMethod) {
+    try {
+        // 設定を更新
+        updateCalculationMethod(newMethod);
+        
+        // 既存のスコア表示要素を削除
+        const existingScoreElement = document.getElementById(EXTENSION_CONFIG.ELEMENT_ID);
+        if (existingScoreElement) {
+            existingScoreElement.remove();
+        }
+        
+        // カスタムイベントをdispatchしてDOMContentLoadedスコープ内の処理に再描画を要求
+        const event = new CustomEvent('genshin-method-changed', { 
+            detail: { method: newMethod } 
+        });
+        document.dispatchEvent(event);
+        
+        console.log(`Calculation method changed to: ${newMethod}. Redraw event dispatched.`);
+    } catch (error) {
+        console.error('Failed to handle calculation method change:', error);
+    }
+}

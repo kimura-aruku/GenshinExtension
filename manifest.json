@@ -4,6 +4,11 @@
        "matches": [ "https://act.hoyolab.com/app/community-game-records-sea/index.html*" ],
        "run_at": "document_start"
     } ],
+    "action": {
+       "default_popup": "popup.html",
+       "default_title": "__MSG_extensionName__"
+    },
+    "permissions": [ "storage", "tabs" ],
     "web_accessible_resources": [ {
        "resources": [ "score-component.html" ],
        "matches": [ "https://act.hoyolab.com/*" ]

@@ -73,19 +73,42 @@ const SCORE_CALCULATION_METHODS = Object.freeze({
             ATK_PERCENT: 1.0,     // 攻撃力%は等倍
             HP_PERCENT: 1.0,      // HP%は等倍
             DEF_PERCENT: 1.0,     // 防御力%は等倍
-            ELEMENTAL_MASTERY: 1.0,   // 元素熟知は等倍
-            ENERGY_RECHARGE: 1.0,     // 元素チャージ効率は等倍
+            ELEMENTAL_MASTERY: STAT_MAX_VALUES.CRIT_DMG / STAT_MAX_VALUES.ELEMENTAL_MASTERY,  // 62.2/187.0 ≈ 0.333
+            ENERGY_RECHARGE: STAT_MAX_VALUES.CRIT_DMG / STAT_MAX_VALUES.ENERGY_RECHARGE,      // 62.2/51.8 ≈ 1.201
             REAL_STATS: 0    // 実数ステータスはスコア対象外
         }
     }
 });
 
-// 現在使用するスコア計算方式（将来的に設定UIで変更可能にする）
-const CURRENT_CALCULATION_METHOD = 'STRICT';
+// 現在使用するスコア計算方式（storageから読み込み、デフォルトは厳密型）
+let CURRENT_CALCULATION_METHOD = 'STRICT';
+
+// ストレージから設定を読み込む関数
+async function loadCalculationMethod() {
+    try {
+        const result = await chrome.storage.sync.get('selectedCalculationMethod');
+        const loadedMethod = result.selectedCalculationMethod || 'STRICT';
+        updateCalculationMethod(loadedMethod);
+        console.log(`Loaded calculation method: ${loadedMethod}`);
+    } catch (error) {
+        console.warn('Failed to load calculation method from storage:', error);
+        updateCalculationMethod('STRICT');
+    }
+}
 
 // 現在の設定から計算倍率を取得する関数
 function getCurrentScoreMultipliers() {
-    return SCORE_CALCULATION_METHODS[CURRENT_CALCULATION_METHOD].multipliers;
+    // windowオブジェクトから最新の値を取得
+    const currentMethod = window.CURRENT_CALCULATION_METHOD || CURRENT_CALCULATION_METHOD;
+    return SCORE_CALCULATION_METHODS[currentMethod].multipliers;
+}
+
+// 計算方式を更新する関数
+function updateCalculationMethod(newMethod) {
+    CURRENT_CALCULATION_METHOD = newMethod;
+    window.CURRENT_CALCULATION_METHOD = newMethod;
+    // SCORE_MULTIPLIERSも同期更新
+    window.SCORE_MULTIPLIERS = getCurrentScoreMultipliers();
 }
 
 // スタイル管理用の定数
@@ -108,9 +131,12 @@ window.initializePropNames = initializePropNames;
 window.STAT_MAX_VALUES = STAT_MAX_VALUES;
 window.SCORE_CALCULATION_METHODS = SCORE_CALCULATION_METHODS;
 window.CURRENT_CALCULATION_METHOD = CURRENT_CALCULATION_METHOD;
+window.loadCalculationMethod = loadCalculationMethod;
 window.getCurrentScoreMultipliers = getCurrentScoreMultipliers;
+window.updateCalculationMethod = updateCalculationMethod;
 window.STYLE_TYPES = STYLE_TYPES;
 window.EXTENSION_CONFIG = EXTENSION_CONFIG;
 
 // 後方互換性のため、現在の計算方式の倍率を直接参照できるようにする
+// 注意: 動的に変更される可能性があるため、この値は初期化後に更新が必要
 window.SCORE_MULTIPLIERS = getCurrentScoreMultipliers();

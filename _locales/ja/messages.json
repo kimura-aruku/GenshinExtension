@@ -107,5 +107,10 @@
   "setupKeywordAdditionalStats": {
     "message": "追加ステータス",
     "description": "setup関数で追加ステータスの検索キーワード"
+  },
+
+  "calculationMethodLabel": {
+    "message": "スコア計算方式:",
+    "description": "popup画面の計算方式選択ラベル"
   }
 }
