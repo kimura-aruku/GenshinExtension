@@ -267,6 +267,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return isInViewport && hasDimensions && isVisibleInCSS;
     }
 
+    // ステータス名を正規化する関数
+    function normalizeStatName(statName) {
+        if (!statName) return '';
+        // 非改行スペース(&nbsp;)を通常スペースに変換し、前後の空白を除去
+        return statName.replace(/\u00A0/g, ' ').trim();
+    }
+
     // 追加ステータスのキャッシュ
     function cacheSubPropNames(){
         const propItemElements = subPropListElement.querySelectorAll('.prop-item');
@@ -281,8 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }else{
                 textContent = childText.map(node => node.textContent).join('');
             }
-            // 非改行スペース(&nbsp;)を通常スペースに変換
-            return (textContent || '').replace(/\u00A0/g, ' ').trim();
+            // ステータス名を正規化
+            return normalizeStatName(textContent);
         });
         
     }
@@ -326,10 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 数値を含む文字列をそれぞれ取得
                 if (/\d/.test(text1)) {
                     subPropValue = text1;
-                    subPropName = text2.replace(/\u00A0/g, ' ').trim();
+                    subPropName = normalizeStatName(text2);
                 } else {
                     subPropValue = text2;
-                    subPropName = text1.replace(/\u00A0/g, ' ').trim();
+                    subPropName = normalizeStatName(text1);
                 }
                 score += Number(getScore(subPropName, subPropValue));
             }
@@ -341,8 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スコアにして返す（config.jsの定数を使用）
     function getScore(subPropName, subPropValue){
-        // 非改行スペース(&nbsp;)を通常スペースに変換
-        subPropName = subPropName.replace(/\u00A0/g, ' ').trim();
+        // ステータス名を正規化
+        subPropName = normalizeStatName(subPropName);
         
         // 実数かパーセントか判断できない状態
         const isRealOrPercent = [PROP_NAME.HP, PROP_NAME.ATK, PROP_NAME.DEF]
