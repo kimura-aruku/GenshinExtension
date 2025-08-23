@@ -4,7 +4,7 @@
     "description": "Chrome拡張の名前"
   },
   "extensionDescription": {
-    "message": "戦績画面で追加ステータスを基準にスコア計算をする拡張（最大スコア＝70*5）",
+    "message": "戦績画面で追加ステータスを基準にスコア計算をする拡張",
     "description": "Chrome拡張の説明"
   },
   "extensionShortName": {
