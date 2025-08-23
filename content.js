@@ -354,11 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreList[i] = calculateScore(i);
         }
 
-        // スタイル適用関数のオブジェクトをStyleManagerから取得
-        const styleAppliers = styleManager.getStyleAppliers();
-
         // スコアコンポーネントを使用して要素作成
-        return await scoreComponent.createScoreElement(scoreList, styleAppliers);
+        return await scoreComponent.createScoreElement(scoreList, styleManager);
     }
 
     // 描画
@@ -441,7 +438,19 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.i18n.getMessage('setupKeywordHighlightedStats'),
             chrome.i18n.getMessage('setupKeywordFirstAccess')
         ];
-        styleManager.findAndSetDescriptionStyle(artifactHeaderElement, descriptionSearchKeys);
+        // 説明用要素を検索してスタイル設定
+        const descriptionElements = artifactHeaderElement.querySelectorAll('div');
+        for (const el of descriptionElements) {
+            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
+                const textContent = el.textContent;
+                for (const key of descriptionSearchKeys) {
+                    if (textContent.includes(key)) {
+                        styleManager.setStyle(STYLE_TYPES.DESCRIPTION, el);
+                        break;
+                    }
+                }
+            }
+        }
         
         // 聖遺物要素取得
         relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
@@ -449,14 +458,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 項目ラベル用のスタイル取得
         const searchKeyForLabel = chrome.i18n.getMessage('setupKeywordAdditionalStats');
-        styleManager.findAndSetLabelStyle(subPropsElement, searchKeyForLabel);
+        // ラベル用要素を検索してスタイル設定
+        const labelElements = subPropsElement.querySelectorAll('p');
+        for (const el of labelElements) {
+            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
+                if (el.textContent.includes(searchKeyForLabel)) {
+                    styleManager.setStyle(STYLE_TYPES.LABEL, el);
+                    break;
+                }
+            }
+        }
         
         // 追加ステータス名要素
         subPropListElement = subPropsElement.querySelector('.prop-list');
         
         // 数値用スタイル取得
         const finalTextElement = await observerManager.waitForElement(SELECTORS.FINAL_TEXT);
-        styleManager.setNumberStyle(finalTextElement);
+        styleManager.setStyle(STYLE_TYPES.NUMBER, finalTextElement);
 
         // キャラ情報要素取得
         basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);

@@ -48,10 +48,10 @@ class ScoreComponent {
     /**
      * スコア表示要素を作成する
      * @param {number[]} scoreList - 5つの聖遺物のスコア配列
-     * @param {Object} styleAppliers - スタイル適用関数のオブジェクト
+     * @param {StyleManager} styleManager - スタイル管理インスタンス
      * @returns {Promise<HTMLElement>} 作成されたスコア表示要素
      */
-    async createScoreElement(scoreList, styleAppliers) {
+    async createScoreElement(scoreList, styleManager) {
         const template = await this.loadTemplate();
         
         // 一時的なコンテナでHTMLを解析
@@ -74,7 +74,7 @@ class ScoreComponent {
         this.updateScores(scoreElement, scoreList);
 
         // スタイルを適用
-        this.applyStyles(scoreElement, styleAppliers);
+        this.applyStyles(scoreElement, styleManager);
 
         return scoreElement;
     }
@@ -122,25 +122,25 @@ class ScoreComponent {
     /**
      * オリジナルページのスタイルを適用する
      * @param {HTMLElement} element - スコア表示要素
-     * @param {Object} styleAppliers - スタイル適用関数のオブジェクト
+     * @param {StyleManager} styleManager - スタイル管理インスタンス
      */
-    applyStyles(element, styleAppliers) {
+    applyStyles(element, styleManager) {
         // 説明文のスタイル適用
         const descriptionElement = element.querySelector('.score-description');
-        if (descriptionElement && styleAppliers.applyDescriptionStyle) {
-            styleAppliers.applyDescriptionStyle(descriptionElement);
+        if (descriptionElement) {
+            styleManager.applyStyle(STYLE_TYPES.DESCRIPTION, descriptionElement);
         }
 
         // ラベルのスタイル適用（合計スコアラベル）
         const totalLabelElement = element.querySelector('.score-total-label');
-        if (totalLabelElement && styleAppliers.applyLabelStyle) {
-            styleAppliers.applyLabelStyle(totalLabelElement);
+        if (totalLabelElement) {
+            styleManager.applyStyle(STYLE_TYPES.LABEL, totalLabelElement);
         }
 
         // 数値のスタイル適用（合計スコア値）
         const totalValueElement = element.querySelector('.score-total-value');
-        if (totalValueElement && styleAppliers.applyNumberStyle) {
-            styleAppliers.applyNumberStyle(totalValueElement);
+        if (totalValueElement) {
+            styleManager.applyStyle(STYLE_TYPES.NUMBER, totalValueElement);
         }
 
         // 個別スコアのラベルと値にスタイル適用
@@ -148,15 +148,11 @@ class ScoreComponent {
         const itemValues = element.querySelectorAll('.score-item-value');
 
         itemLabels.forEach(label => {
-            if (styleAppliers.applyLabelStyle) {
-                styleAppliers.applyLabelStyle(label);
-            }
+            styleManager.applyStyle(STYLE_TYPES.LABEL, label);
         });
 
         itemValues.forEach(value => {
-            if (styleAppliers.applyNumberStyle) {
-                styleAppliers.applyNumberStyle(value);
-            }
+            styleManager.applyStyle(STYLE_TYPES.NUMBER, value);
         });
     }
 

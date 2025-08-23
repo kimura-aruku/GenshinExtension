@@ -4,17 +4,27 @@
  */
 class StyleManager {
     constructor() {
-        // スタイルキャッシュ
-        this.styles = {
-            number: {},
-            description: {},
-            label: {}
-        };
+        // スタイルキャッシュ（configのSTYLE_TYPESから動的に初期化）
+        this.styles = {};
+        Object.values(STYLE_TYPES).forEach(type => {
+            this.styles[type] = {};
+        });
         
         // コピー対象のスタイルプロパティ
         this.allowedProperties = Object.freeze([
             'font-size', 'text-align', 'font-family', 'color'
         ]);
+    }
+
+    /**
+     * スタイルタイプのバリデーション
+     * @param {string} styleType - スタイルタイプ
+     * @throws {Error} 無効なスタイルタイプの場合
+     */
+    validateStyleType(styleType) {
+        if (!Object.values(STYLE_TYPES).includes(styleType)) {
+            throw new Error(`Invalid style type: ${styleType}. Valid types: ${Object.values(STYLE_TYPES).join(', ')}`);
+        }
     }
 
     /**
@@ -34,105 +44,22 @@ class StyleManager {
     }
 
     /**
-     * 数値スタイルを設定する
-     * @param {HTMLElement} element - 数値スタイル取得元の要素
+     * 汎用スタイル設定メソッド
+     * @param {string} styleType - スタイルタイプ（STYLE_TYPESの値）
+     * @param {HTMLElement} element - スタイル取得元の要素
      */
-    setNumberStyle(element) {
-        this.styles.number = this.extractStyles(element);
+    setStyle(styleType, element) {
+        this.validateStyleType(styleType);
+        this.styles[styleType] = this.extractStyles(element);
     }
 
     /**
-     * 説明文スタイルを設定する
-     * @param {HTMLElement} element - 説明文スタイル取得元の要素
-     */
-    setDescriptionStyle(element) {
-        this.styles.description = this.extractStyles(element);
-    }
-
-    /**
-     * ラベルスタイルを設定する
-     * @param {HTMLElement} element - ラベルスタイル取得元の要素
-     */
-    setLabelStyle(element) {
-        this.styles.label = this.extractStyles(element);
-    }
-
-    /**
-     * 数値スタイルを要素に適用する
+     * 汎用スタイル適用メソッド
+     * @param {string} styleType - スタイルタイプ（STYLE_TYPESの値）
      * @param {HTMLElement} element - 適用先の要素
      */
-    applyNumberStyle(element) {
-        Object.assign(element.style, this.styles.number);
-    }
-
-    /**
-     * 説明文スタイルを要素に適用する
-     * @param {HTMLElement} element - 適用先の要素
-     */
-    applyDescriptionStyle(element) {
-        Object.assign(element.style, this.styles.description);
-    }
-
-    /**
-     * ラベルスタイルを要素に適用する
-     * @param {HTMLElement} element - 適用先の要素
-     */
-    applyLabelStyle(element) {
-        Object.assign(element.style, this.styles.label);
-    }
-
-    /**
-     * スタイル適用関数のオブジェクトを取得する
-     * @returns {object} スタイル適用関数のオブジェクト
-     */
-    getStyleAppliers() {
-        return {
-            applyDescriptionStyle: (element) => this.applyDescriptionStyle(element),
-            applyLabelStyle: (element) => this.applyLabelStyle(element),
-            applyNumberStyle: (element) => this.applyNumberStyle(element)
-        };
-    }
-
-    /**
-     * 説明用要素を検索して設定する
-     * @param {HTMLElement} containerElement - 検索対象のコンテナ要素
-     * @param {string[]} searchKeys - 検索キーワード配列
-     * @returns {boolean} 設定成功フラグ
-     */
-    findAndSetDescriptionStyle(containerElement, searchKeys) {
-        const descriptionElements = containerElement.querySelectorAll('div');
-        
-        for (const el of descriptionElements) {
-            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                const textContent = el.textContent;
-                for (const key of searchKeys) {
-                    if (textContent.includes(key)) {
-                        this.setDescriptionStyle(el);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * ラベル用要素を検索して設定する
-     * @param {HTMLElement} containerElement - 検索対象のコンテナ要素
-     * @param {string} searchKey - 検索キーワード
-     * @returns {boolean} 設定成功フラグ
-     */
-    findAndSetLabelStyle(containerElement, searchKey) {
-        const labelElements = containerElement.querySelectorAll('p');
-        
-        for (const el of labelElements) {
-            if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-                if (el.textContent.includes(searchKey)) {
-                    this.setLabelStyle(el);
-                    return true;
-                }
-            }
-        }
-        return false;
+    applyStyle(styleType, element) {
+        this.validateStyleType(styleType);
+        Object.assign(element.style, this.styles[styleType]);
     }
 }

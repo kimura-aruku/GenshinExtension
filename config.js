@@ -74,6 +74,13 @@ function getCurrentScoreMultipliers() {
     return SCORE_CALCULATION_METHODS[CURRENT_CALCULATION_METHOD].multipliers;
 }
 
+// スタイル管理用の定数
+const STYLE_TYPES = Object.freeze({
+    NUMBER: 'number',
+    DESCRIPTION: 'description',
+    LABEL: 'label'
+});
+
 // Chrome拡張の設定
 const EXTENSION_CONFIG = Object.freeze({
     ELEMENT_ID: 'alk-element',     // Chrome拡張の要素ID
@@ -87,6 +94,7 @@ window.STAT_MAX_VALUES = STAT_MAX_VALUES;
 window.SCORE_CALCULATION_METHODS = SCORE_CALCULATION_METHODS;
 window.CURRENT_CALCULATION_METHOD = CURRENT_CALCULATION_METHOD;
 window.getCurrentScoreMultipliers = getCurrentScoreMultipliers;
+window.STYLE_TYPES = STYLE_TYPES;
 window.EXTENSION_CONFIG = EXTENSION_CONFIG;
 
 // 後方互換性のため、現在の計算方式の倍率を直接参照できるようにする
