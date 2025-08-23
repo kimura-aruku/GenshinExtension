@@ -25,10 +25,6 @@
     "description": "個別アイテムのスコアラベル"
   },
   
-  "errorScoreDisplayLoadFailed": {
-    "message": "スコア表示の読み込みに失敗しました。",
-    "description": "スコア表示コンポーネント読み込みエラー"
-  },
   "errorTemplateLoadFailed": {
     "message": "HTMLテンプレートの読み込みに失敗しました:",
     "description": "HTMLテンプレート読み込みエラー"
@@ -36,24 +32,6 @@
   "errorScoreElementNotFound": {
     "message": "スコア表示要素が見つかりませんでした",
     "description": "スコア表示要素が見つからない場合のエラー"
-  },
-  "errorScoreElementCreationFailed": {
-    "message": "スコア要素の作成に失敗しました:",
-    "description": "スコア要素作成の一般的なエラー"
-  },
-  "errorRequiredElementsNotFound": {
-    "message": "スコア表示の挿入に必要な親要素または聖遺物リスト要素が見つかりません。",
-    "description": "必要な要素が見つからない場合のエラー"
-  },
-  "errorTimeout": {
-    "message": "Timeout: 要素 $selector$ が見つかりませんでした",
-    "description": "要素取得のタイムアウトエラー",
-    "placeholders": {
-      "selector": {
-        "content": "$1",
-        "example": ".relic-list"
-      }
-    }
   },
   "errorGeneral": {
     "message": "エラー:",

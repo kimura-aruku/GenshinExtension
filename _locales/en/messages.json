@@ -25,10 +25,6 @@
     "description": "Individual item score label"
   },
   
-  "errorScoreDisplayLoadFailed": {
-    "message": "Failed to load score display.",
-    "description": "Score display component load error"
-  },
   "errorTemplateLoadFailed": {
     "message": "Failed to load HTML template:",
     "description": "HTML template load error"
@@ -36,24 +32,6 @@
   "errorScoreElementNotFound": {
     "message": "Score display element not found",
     "description": "Error when score display element is not found"
-  },
-  "errorScoreElementCreationFailed": {
-    "message": "Failed to create score element:",
-    "description": "General error for score element creation"
-  },
-  "errorRequiredElementsNotFound": {
-    "message": "Required parent element or relic list element not found for score display insertion.",
-    "description": "Error when required elements are not found"
-  },
-  "errorTimeout": {
-    "message": "Timeout: Element $selector$ not found",
-    "description": "Element retrieval timeout error",
-    "placeholders": {
-      "selector": {
-        "content": "$1",
-        "example": ".relic-list"
-      }
-    }
   },
   "errorGeneral": {
     "message": "Error:",

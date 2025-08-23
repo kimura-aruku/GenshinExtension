@@ -5,18 +5,32 @@
  */
 
 // ステータス名の定数（多言語対応）
-const PROP_NAME = Object.freeze({
-    HP: chrome.i18n.getMessage('statHP'),
-    HP_PERCENT: chrome.i18n.getMessage('statHPPercent'),
-    ATK: chrome.i18n.getMessage('statATK'),
-    ATK_PERCENT: chrome.i18n.getMessage('statATKPercent'),
-    DEF: chrome.i18n.getMessage('statDEF'),
-    DEF_PERCENT: chrome.i18n.getMessage('statDEFPercent'),
-    CRIT_RATE: chrome.i18n.getMessage('statCritRate'),
-    CRIT_DMG: chrome.i18n.getMessage('statCritDMG'),
-    ELEMENTAL_MASTERY: chrome.i18n.getMessage('statElementalMastery'),
-    ENERGY_RECHARGE: chrome.i18n.getMessage('statEnergyRecharge')
-});
+// 注意: この定数はPageLocaleManagerで動的に初期化される
+let PROP_NAME = {};
+
+// PageLocaleManagerで初期化する関数
+function initializePropNames(pageLocaleManager) {
+    const messages = pageLocaleManager.getMessagesByKeys([
+        'statHP', 'statHPPercent', 'statATK', 'statATKPercent',
+        'statDEF', 'statDEFPercent', 'statCritRate', 'statCritDMG',
+        'statElementalMastery', 'statEnergyRecharge'
+    ]);
+    
+    PROP_NAME = Object.freeze({
+        HP: messages.statHP,
+        HP_PERCENT: messages.statHPPercent,
+        ATK: messages.statATK,
+        ATK_PERCENT: messages.statATKPercent,
+        DEF: messages.statDEF,
+        DEF_PERCENT: messages.statDEFPercent,
+        CRIT_RATE: messages.statCritRate,
+        CRIT_DMG: messages.statCritDMG,
+        ELEMENTAL_MASTERY: messages.statElementalMastery,
+        ENERGY_RECHARGE: messages.statEnergyRecharge
+    });
+    
+    return PROP_NAME;
+}
 
 // 各ステータスの最大値（サブステータス）
 const STAT_MAX_VALUES = Object.freeze({
@@ -89,7 +103,8 @@ const EXTENSION_CONFIG = Object.freeze({
 });
 
 // グローバルに利用可能にする
-window.PROP_NAME = PROP_NAME;
+window.PROP_NAME = PROP_NAME;  // 初期化後に更新される
+window.initializePropNames = initializePropNames;
 window.STAT_MAX_VALUES = STAT_MAX_VALUES;
 window.SCORE_CALCULATION_METHODS = SCORE_CALCULATION_METHODS;
 window.CURRENT_CALCULATION_METHOD = CURRENT_CALCULATION_METHOD;

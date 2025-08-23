@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
         SUB_PROPS_PROP_LIST: '.sub-props .prop-list',
         PROP_LIST: '.prop-list',
         
+        // 言語選択関連
+        LANGUAGE_SELECTOR: '.mhy-hoyolab-lang-selector__current-lang',
+        
         // その他
         SPLIT: '.split'
     });
@@ -39,8 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     /** @type {HTMLElement | null} */
     let basicInfoElement;
 
+    // 言語選択要素
+    /** @type {HTMLElement | null} */
+    let languageSelectorElement;
+
     // スタイル管理インスタンス（style-manager.jsから読み込み）
     const styleManager = new StyleManager();
+    
+    // ページ言語管理インスタンス（page-locale-manager.jsから読み込み）
+    const pageLocaleManager = new PageLocaleManager();
 
     /**
      * DOM監視・検知管理クラス
@@ -52,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.subPropsObserver = null;
             // 基本情報要素の監視オブジェクト
             this.basicInfoObserver = null;
+            // 言語選択要素の監視オブジェクト
+            this.languageObserver = null;
             
             // 監視設定
             this.observerConfig = Object.freeze({
@@ -67,20 +79,30 @@ document.addEventListener('DOMContentLoaded', () => {
         /**
          * 要素が見つかるまで待機する
          * @param {string} selector - セレクタ文字列
+         * @param {function} additionalCondition - 追加の条件チェック関数（オプション）
          * @returns {Promise<HTMLElement>} 見つかった要素
          */
-        waitForElement(selector) {
+        waitForElement(selector, additionalCondition = null) {
             return new Promise((resolve, reject) => {
+                // 要素の条件チェック
+                const checkElement = (element) => {
+                    if (!element) return false;
+                    if (additionalCondition && !additionalCondition(element)) {
+                        return false;
+                    }
+                    return true;
+                };
+
                 // 既に存在するならそのまま返す
                 const existingElement = document.querySelector(selector);
-                if (existingElement) {
+                if (checkElement(existingElement)) {
                     resolve(existingElement);
                     return;
                 }
 
                 const observer = new MutationObserver((mutationsList, observer) => {
                     const element = document.querySelector(selector);
-                    if (element) {
+                    if (checkElement(element)) {
                         observer.disconnect();
                         resolve(element);
                     }
@@ -96,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // タイムアウトの設定
                 setTimeout(() => {
                     observer.disconnect();
-                    reject(new Error(chrome.i18n.getMessage('errorTimeout', selector)));
+                    reject(new Error(`Timeout: Element ${selector} not found`));
                 }, EXTENSION_CONFIG.WAIT_TIMEOUT);
             });
         }
@@ -133,8 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
          * 監視を開始する
          * @param {HTMLElement} subPropElement - 追加ステータス要素
          * @param {HTMLElement} basicInfoElement - 基本情報要素
+         * @param {HTMLElement} languageElement - 言語選択要素
          */
-        startObserving(subPropElement, basicInfoElement) {
+        startObserving(subPropElement, basicInfoElement, languageElement) {
             // 既存の監視を停止
             this.stopObserving();
             
@@ -153,6 +176,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 this.basicInfoObserver.observe(basicInfoElement, this.observerConfig);
             }
+            
+            // 言語選択要素の監視
+            if (languageElement) {
+                this.languageObserver = new MutationObserver(
+                    (mutations, observer) => this.handleMutations(mutations, observer)
+                );
+                this.languageObserver.observe(languageElement, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+            }
         }
 
         /**
@@ -166,6 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.basicInfoObserver) {
                 this.basicInfoObserver.disconnect();
                 this.basicInfoObserver = null;
+            }
+            if (this.languageObserver) {
+                this.languageObserver.disconnect();
+                this.languageObserver = null;
             }
         }
 
@@ -242,8 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }else{
                 textContent = childText.map(node => node.textContent).join('');
             }
-            return textContent || '';
+            // 非改行スペース(&nbsp;)を通常スペースに変換
+            return (textContent || '').replace(/\u00A0/g, ' ').trim();
         });
+        
     }
 
     // テキストノードを取得
@@ -285,10 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 数値を含む文字列をそれぞれ取得
                 if (/\d/.test(text1)) {
                     subPropValue = text1;
-                    subPropName = text2;
+                    subPropName = text2.replace(/\u00A0/g, ' ').trim();
                 } else {
                     subPropValue = text2;
-                    subPropName = text1;
+                    subPropName = text1.replace(/\u00A0/g, ' ').trim();
                 }
                 score += Number(getScore(subPropName, subPropValue));
             }
@@ -300,13 +341,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スコアにして返す（config.jsの定数を使用）
     function getScore(subPropName, subPropValue){
+        // 非改行スペース(&nbsp;)を通常スペースに変換
+        subPropName = subPropName.replace(/\u00A0/g, ' ').trim();
+        
         // 実数かパーセントか判断できない状態
         const isRealOrPercent = [PROP_NAME.HP, PROP_NAME.ATK, PROP_NAME.DEF]
             .includes(subPropName);
         if(isRealOrPercent && subPropValue.includes('%')){
-            subPropName += 'パーセンテージ';
+            // 言語に応じたパーセンテージ表記に変換
+            if(subPropName === PROP_NAME.HP) subPropName = PROP_NAME.HP_PERCENT;
+            else if(subPropName === PROP_NAME.ATK) subPropName = PROP_NAME.ATK_PERCENT;
+            else if(subPropName === PROP_NAME.DEF) subPropName = PROP_NAME.DEF_PERCENT;
         }
         subPropValue = subPropValue.replace(/[%+]/g, '').trim();
+        
         // スコアにならないステータス
         if (!subPropNames.includes(subPropName)) {
             return 0;
@@ -356,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // スコアコンポーネントを使用して要素作成
-        return await scoreComponent.createScoreElement(scoreList, styleManager);
+        return await scoreComponent.createScoreElement(scoreList, styleManager, pageLocaleManager);
     }
 
     // 描画
@@ -388,16 +436,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newDiv = await createScoreElement();
                 parent.insertBefore(newDiv, relicListElement);
             } else {
-                console.error(chrome.i18n.getMessage('errorRequiredElementsNotFound'));
+                console.error('Required parent element or relic list element not found for score display insertion.');
             }
         } catch (error) {
-            console.error(chrome.i18n.getMessage('errorScoreElementCreationFailed'), error);
+            console.error('Failed to create score element:', error);
             // フォールバック: エラーメッセージを表示
             const parent = relicListElement?.parentElement;
             if (parent) {
                 const errorDiv = document.createElement('div');
                 errorDiv.id = MY_ID;
-                errorDiv.textContent = chrome.i18n.getMessage('errorScoreDisplayLoadFailed');
+                errorDiv.textContent = 'Failed to load score display.';
                 errorDiv.style.color = 'red';
                 errorDiv.style.padding = '10px';
                 parent.insertBefore(errorDiv, relicListElement);
@@ -428,16 +476,41 @@ document.addEventListener('DOMContentLoaded', () => {
             observerManager.restartBasicInfoObserving(basicInfoElement);
         }
         
+        // 言語選択要素の再取得と言語判定の更新
+        if (!isElementVisible(languageSelectorElement)) {
+            languageSelectorElement = await observerManager.waitForElement(SELECTORS.LANGUAGE_SELECTOR, (element) => {
+                // 文字列が取得できることを追加条件とする
+                const text = element.textContent?.trim() || element.innerText?.trim() || '';
+                return text.length > 0;
+            });
+            // 言語を再判定してPROP_NAMEを更新
+            pageLocaleManager.detectPageLanguage(languageSelectorElement);
+            initializePropNames(pageLocaleManager);
+        }
+        
+        // 全ての監視を再開する（言語選択要素も含めて）
+        observerManager.startObserving(subPropListElement, basicInfoElement, languageSelectorElement);
+        
         await draw();
     }
 
     // 最初に実行
     async function setup(){
+        // 言語選択要素を取得して言語判定
+        languageSelectorElement = await observerManager.waitForElement(SELECTORS.LANGUAGE_SELECTOR, (element) => {
+            // 文字列が取得できることを追加条件とする
+            const text = element.textContent?.trim() || element.innerText?.trim() || '';
+            return text.length > 0;
+        });
+        pageLocaleManager.detectPageLanguage(languageSelectorElement);
+        
+        // ページ言語に応じたPROP_NAMEを初期化
+        initializePropNames(pageLocaleManager);
         // 説明用のスタイル取得
         const artifactHeaderElement = await observerManager.waitForElement(SELECTORS.ARTIFACT_INFO_HEADER);
         const descriptionSearchKeys = [
-            chrome.i18n.getMessage('setupKeywordHighlightedStats'),
-            chrome.i18n.getMessage('setupKeywordFirstAccess')
+            pageLocaleManager.getMessage('setupKeywordHighlightedStats'),
+            pageLocaleManager.getMessage('setupKeywordFirstAccess')
         ];
         // 説明用要素を検索してスタイル設定
         const descriptionElements = artifactHeaderElement.querySelectorAll('div');
@@ -458,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
         
         // 項目ラベル用のスタイル取得
-        const searchKeyForLabel = chrome.i18n.getMessage('setupKeywordAdditionalStats');
+        const searchKeyForLabel = pageLocaleManager.getMessage('setupKeywordAdditionalStats');
         // ラベル用要素を検索してスタイル設定
         const labelElements = subPropsElement.querySelectorAll('p');
         for (const el of labelElements) {
@@ -480,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // キャラ情報要素取得
         basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);
         // 変更監視開始
-        observerManager.startObserving(subPropListElement, basicInfoElement);
+        observerManager.startObserving(subPropListElement, basicInfoElement, languageSelectorElement);
     }
 
     // スコア要素作成
@@ -489,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await setup();
             await draw();
         } catch (error) {
-            console.error(chrome.i18n.getMessage('errorGeneral'), error);
+            console.error(pageLocaleManager.getMessage('errorGeneral'), error);
         }
     }
 

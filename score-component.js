@@ -49,9 +49,10 @@ class ScoreComponent {
      * スコア表示要素を作成する
      * @param {number[]} scoreList - 5つの聖遺物のスコア配列
      * @param {StyleManager} styleManager - スタイル管理インスタンス
+     * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
      * @returns {Promise<HTMLElement>} 作成されたスコア表示要素
      */
-    async createScoreElement(scoreList, styleManager) {
+    async createScoreElement(scoreList, styleManager, pageLocaleManager) {
         const template = await this.loadTemplate();
         
         // 一時的なコンテナでHTMLを解析
@@ -61,14 +62,15 @@ class ScoreComponent {
         // メインのスコア表示要素を取得
         const scoreElement = tempContainer.querySelector('.score-display');
         if (!scoreElement) {
-            throw new Error(chrome.i18n.getMessage('errorScoreElementNotFound'));
+            throw new Error(pageLocaleManager.getMessage('errorScoreElementNotFound'));
         }
 
         // IDを設定
         scoreElement.id = this.elementId;
+        
+        // 言語対応のテキスト更新
+        this.updateLocalizedText(scoreElement, pageLocaleManager);
 
-        // 国際化メッセージを適用
-        this.applyI18nMessages(scoreElement);
 
         // スコアデータを更新
         this.updateScores(scoreElement, scoreList);
@@ -165,6 +167,22 @@ class ScoreComponent {
         if (existingElement) {
             this.updateScores(existingElement, scoreList);
         }
+    }
+
+    /**
+     * ローカライズされたテキストを更新する
+     * @param {HTMLElement} scoreElement - スコア表示要素
+     * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
+     */
+    updateLocalizedText(scoreElement, pageLocaleManager) {
+        // data-i18n属性を持つ全ての要素を取得
+        const i18nElements = scoreElement.querySelectorAll('[data-i18n]');
+        
+        i18nElements.forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            const localizedText = pageLocaleManager.getMessage(key);
+            element.textContent = localizedText;
+        });
     }
 }
 
