@@ -1,0 +1,133 @@
+{
+  "extensionName": {
+    "message": "Genshin Score Calculator",
+    "description": "Chrome extension name"
+  },
+  "extensionDescription": {
+    "message": "Extension for calculating artifact scores based on sub-stats in the character profile screen",
+    "description": "Chrome extension description"
+  },
+  "extensionShortName": {
+    "message": "Score Calculator",
+    "description": "Chrome extension short name"
+  },
+
+  "scoreDescription": {
+    "message": "Scores are calculated from sub-stats.",
+    "description": "Score display UI description text"
+  },
+  "totalScore": {
+    "message": "Total Score",
+    "description": "Total score label"
+  },
+  "itemScore": {
+    "message": "Score",
+    "description": "Individual item score label"
+  },
+  
+  "errorScoreDisplayLoadFailed": {
+    "message": "Failed to load score display.",
+    "description": "Score display component load error"
+  },
+  "errorTemplateLoadFailed": {
+    "message": "Failed to load HTML template:",
+    "description": "HTML template load error"
+  },
+  "errorScoreElementNotFound": {
+    "message": "Score display element not found",
+    "description": "Error when score display element is not found"
+  },
+  "errorScoreElementCreationFailed": {
+    "message": "Failed to create score element:",
+    "description": "General error for score element creation"
+  },
+  "errorRequiredElementsNotFound": {
+    "message": "Required parent element or relic list element not found for score display insertion.",
+    "description": "Error when required elements are not found"
+  },
+  "errorTimeout": {
+    "message": "Timeout: Element $selector$ not found",
+    "description": "Element retrieval timeout error",
+    "placeholders": {
+      "selector": {
+        "content": "$1",
+        "example": ".relic-list"
+      }
+    }
+  },
+  "errorGeneral": {
+    "message": "Error:",
+    "description": "General error message prefix"
+  },
+
+  "statHP": {
+    "message": "HP",
+    "description": "HP stat name"
+  },
+  "statHPPercent": {
+    "message": "HP Percentage",
+    "description": "HP Percentage stat name"
+  },
+  "statATK": {
+    "message": "ATK",
+    "description": "ATK stat name"
+  },
+  "statATKPercent": {
+    "message": "ATK Percentage",
+    "description": "ATK Percentage stat name"
+  },
+  "statDEF": {
+    "message": "DEF",
+    "description": "DEF stat name"
+  },
+  "statDEFPercent": {
+    "message": "DEF Percentage",
+    "description": "DEF Percentage stat name"
+  },
+  "statCritRate": {
+    "message": "CRIT Rate",
+    "description": "CRIT Rate stat name"
+  },
+  "statCritDMG": {
+    "message": "CRIT DMG",
+    "description": "CRIT DMG stat name"
+  },
+  "statElementalMastery": {
+    "message": "Elemental Mastery",
+    "description": "Elemental Mastery stat name"
+  },
+  "statEnergyRecharge": {
+    "message": "Energy Recharge",
+    "description": "Energy Recharge stat name"
+  },
+
+  "scoreMethodStrictName": {
+    "message": "Strict",
+    "description": "Strict score calculation method name"
+  },
+  "scoreMethodStrictDescription": {
+    "message": "CRIT DMG:CRIT Rate:ATK% = 1:2:1.333...",
+    "description": "Strict score calculation method description"
+  },
+  "scoreMethodPopularName": {
+    "message": "Popular",
+    "description": "Popular score calculation method name"
+  },
+  "scoreMethodPopularDescription": {
+    "message": "CRIT DMG:CRIT Rate:ATK% = 1:2:1",
+    "description": "Popular score calculation method description"
+  },
+
+  "setupKeywordHighlightedStats": {
+    "message": "The marked recommended affixes",
+    "description": "Search keyword for highlighted stats in setup function"
+  },
+  "setupKeywordFirstAccess": {
+    "message": "When you enter for the first time",
+    "description": "Search keyword for first access in setup function"
+  },
+  "setupKeywordAdditionalStats": {
+    "message": "Minor Affixes",
+    "description": "Search keyword for additional stats in setup function"
+  }
+}
