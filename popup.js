@@ -3,19 +3,49 @@
  * スコア計算方式の選択UI を提供する
  */
 
+/**
+ * ブラウザの言語設定に基づいてメッセージを取得する
+ * @returns {Object} 言語に対応したメッセージオブジェクト
+ */
+function getMessages() {
+    const lang = navigator.language.split('-')[0]; // "en-US" → "en"
+    const messages = {
+        ja: {
+            calculationMethodLabel: 'スコア計算方式:',
+            scoreMethodStrictName: '厳密型',
+            scoreMethodStrictDescription: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...',
+            scoreMethodPopularName: '普及型',
+            scoreMethodPopularDescription: '会心ダメージ:会心率:攻撃力% = 1:2:1'
+        },
+        en: {
+            calculationMethodLabel: 'Calculation Method:',
+            scoreMethodStrictName: 'Strict',
+            scoreMethodStrictDescription: 'CRIT DMG:CRIT Rate:ATK% = 1:2:1.333...',
+            scoreMethodPopularName: 'Popular',
+            scoreMethodPopularDescription: 'CRIT DMG:CRIT Rate:ATK% = 1:2:1'
+        }
+    };
+    return messages[lang] || messages['ja']; // フォールバック
+}
+
 // config.js から必要な定数を読み込み
 // Manifest V3では content script の変数に直接アクセスできないため、
 // 必要な定数をここで再定義する
-const SCORE_CALCULATION_METHODS = Object.freeze({
-    STRICT: {
-        name: '厳密型',
-        description: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...'
-    },
-    POPULAR: {
-        name: '普及型', 
-        description: '会心ダメージ:会心率:攻撃力% = 1:2:1'
-    }
-});
+function createScoreCalculationMethods() {
+    const messages = getMessages();
+    return Object.freeze({
+        STRICT: {
+            name: messages.scoreMethodStrictName,
+            description: messages.scoreMethodStrictDescription
+        },
+        POPULAR: {
+            name: messages.scoreMethodPopularName,
+            description: messages.scoreMethodPopularDescription
+        }
+    });
+}
+
+const SCORE_CALCULATION_METHODS = createScoreCalculationMethods();
 
 // デフォルト設定
 const DEFAULT_METHOD = 'STRICT';
@@ -70,10 +100,7 @@ async function initializeUI() {
  * 国際化対応のテキスト更新
  */
 function updateI18nText() {
-    // 静的なメッセージマッピング
-    const messages = {
-        calculationMethodLabel: 'スコア計算方式:'
-    };
+    const messages = getMessages();
     
     const i18nElements = document.querySelectorAll('[data-i18n]');
     i18nElements.forEach(element => {
