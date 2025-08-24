@@ -95,7 +95,9 @@ class ScoreComponent {
 
         // スコア項目を更新
         const subtotalElement = element.querySelector('[data-subtotal-score]');
+        const subtotalLabelElement = element.querySelector('.score-subtotal-label');
         const overElement = element.querySelector('[data-over-score]');
+        const overLabelElement = element.querySelector('.score-over-label');
         const totalScoreElement = element.querySelector('[data-total-score]');
 
         if (scoreInfo && scoreInfo.originalTotal !== undefined && scoreInfo.reductionTotal !== undefined) {
@@ -104,12 +106,16 @@ class ScoreComponent {
             const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
             const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
             
+            if (subtotalLabelElement) subtotalLabelElement.textContent = '小計スコア';
             if (subtotalElement) subtotalElement.textContent = displayOriginalTotal.toFixed(2);
+            if (overLabelElement) overLabelElement.textContent = '超過スコア';
             if (overElement) overElement.textContent = displayReductionTotal.toFixed(2);
             if (totalScoreElement) totalScoreElement.textContent = displayAdjustedTotal.toFixed(2);
         } else {
-            // 目標チャージ効率表示がオフの場合：小計・超過スコアは空、合計スコアのみ表示
+            // 目標チャージ効率表示がオフの場合：小計・超過スコアのラベルと値を空に、合計スコアのみ表示
+            if (subtotalLabelElement) subtotalLabelElement.textContent = '';
             if (subtotalElement) subtotalElement.textContent = '';
+            if (overLabelElement) overLabelElement.textContent = '';
             if (overElement) overElement.textContent = '';
             if (totalScoreElement) totalScoreElement.textContent = totalScore.toFixed(2);
         }

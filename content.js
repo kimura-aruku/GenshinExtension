@@ -860,6 +860,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetERComponent.hideTargetERInput();
             }
             
+            // スコア表示を再描画（設定変更を反映）
+            await draw();
+            
         } catch (error) {
             console.error('Failed to handle target ER display change:', error);
         }
