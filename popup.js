@@ -13,11 +13,10 @@ function getMessages() {
         ja: {
             calculationMethodLabel: 'スコア計算方式:',
             scoreMethodStrictName: '厳密型',
-            scoreMethodStrictDescription: 'スコア係数',
             scoreMethodPopularName: '普及型',
-            scoreMethodPopularDescription: 'スコア係数',
+            scoreMethodDescription: 'スコア = ステータス値 × スコア係数',
             statName: 'ステータス',
-            multiplier: '係数',
+            multiplier: 'スコア係数',
             critDMG: '会心ダメージ',
             critRate: '会心率',
             atkPercent: '攻撃力%',
@@ -29,11 +28,10 @@ function getMessages() {
         en: {
             calculationMethodLabel: 'Calculation Method:',
             scoreMethodStrictName: 'Strict',
-            scoreMethodStrictDescription: 'Score Coefficients',
             scoreMethodPopularName: 'Popular',
-            scoreMethodPopularDescription: 'Score Coefficients',
+            scoreMethodDescription: 'Score = Stat Value × Score Coefficient',
             statName: 'Stat',
-            multiplier: 'Multiplier',
+            multiplier: 'Score Coefficient',
             critDMG: 'CRIT DMG',
             critRate: 'CRIT Rate',
             atkPercent: 'ATK%',
@@ -52,12 +50,12 @@ function createLocalizedScoreCalculationMethods() {
     return Object.freeze({
         STRICT: {
             name: messages.scoreMethodStrictName,
-            description: messages.scoreMethodStrictDescription,
+            description: messages.scoreMethodDescription,
             multipliers: SCORE_CALCULATION_METHODS.STRICT.multipliers
         },
         POPULAR: {
             name: messages.scoreMethodPopularName,
-            description: messages.scoreMethodPopularDescription,
+            description: messages.scoreMethodDescription,
             multipliers: SCORE_CALCULATION_METHODS.POPULAR.multipliers
         }
     });
@@ -179,7 +177,7 @@ function generateScoreTable(methodKey) {
     };
     
     let tableHTML = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
             <thead>
                 <tr style="background: #f0f0f0;">
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left; font-weight: 500;">${messages.statName}</th>
@@ -246,10 +244,10 @@ async function handleMethodChange(event) {
 function updateDescription(methodKey) {
     const method = LOCALIZED_SCORE_METHODS[methodKey];
     if (method) {
-        // 簡単な説明文と詳細な係数表を表示
-        const descriptionText = `<div style="margin-bottom: 8px;">${method.description}</div>`;
+        // 補足情報と詳細な係数表を表示
+        const descriptionText = `<div style="font-size: 11px; color: #888;">${method.description}</div>`;
         const tableHTML = generateScoreTable(methodKey);
-        methodDescriptionDiv.innerHTML = descriptionText + tableHTML;
+        methodDescriptionDiv.innerHTML = tableHTML + descriptionText;
     }
 }
 
