@@ -50,9 +50,10 @@ class ScoreComponent {
      * @param {number[]} scoreList - 5つの聖遺物のスコア配列
      * @param {StyleManager} styleManager - スタイル管理インスタンス
      * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
+     * @param {Object} scoreInfo - スコア情報（元のスコア、削減情報など）
      * @returns {Promise<HTMLElement>} 作成されたスコア表示要素
      */
-    async createScoreElement(scoreList, styleManager, pageLocaleManager) {
+    async createScoreElement(scoreList, styleManager, pageLocaleManager, scoreInfo = null) {
         const template = await this.loadTemplate();
         
         // 一時的なコンテナでHTMLを解析
@@ -73,7 +74,7 @@ class ScoreComponent {
 
 
         // スコアデータを更新
-        this.updateScores(scoreElement, scoreList);
+        this.updateScores(scoreElement, scoreList, scoreInfo);
 
         // スタイルを適用
         this.applyStyles(scoreElement, styleManager);
@@ -86,19 +87,33 @@ class ScoreComponent {
      * スコア値をHTMLテンプレートに反映する
      * @param {HTMLElement} element - スコア表示要素
      * @param {number[]} scoreList - 5つの聖遺物のスコア配列
+     * @param {Object} scoreInfo - スコア情報（元のスコア、削減情報など）
      */
-    updateScores(element, scoreList) {
+    updateScores(element, scoreList, scoreInfo = null) {
         // 合計スコアを計算
         const totalScore = scoreList.reduce((sum, score) => sum + Number(score), 0);
 
         // 合計スコアを更新
         const totalScoreElement = element.querySelector('[data-total-score]');
         if (totalScoreElement) {
-            totalScoreElement.textContent = totalScore.toFixed(2);
+            if (scoreInfo && scoreInfo.originalTotal !== undefined && scoreInfo.reductionTotal !== undefined) {
+                // 表示用の数値を四捨五入して計算
+                const displayOriginalTotal = Number(scoreInfo.originalTotal.toFixed(2));
+                const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
+                const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
+                
+                // 調整がある場合は「調整後（元 - 削減）」形式で表示
+                const displayText = `${displayAdjustedTotal.toFixed(2)}（${displayOriginalTotal.toFixed(2)} - ${displayReductionTotal.toFixed(2)}）`;
+                totalScoreElement.textContent = displayText;
+            } else {
+                // 通常表示
+                totalScoreElement.textContent = totalScore.toFixed(2);
+            }
         }
 
-        // 個別スコアを更新
-        scoreList.forEach((score, index) => {
+        // 個別スコアを更新（常に元のスコアを表示）
+        const originalScoreList = scoreInfo && scoreInfo.originalScoreList ? scoreInfo.originalScoreList : scoreList;
+        originalScoreList.forEach((score, index) => {
             const scoreValueElement = element.querySelector(`[data-item-score="${index}"]`);
             if (scoreValueElement) {
                 scoreValueElement.textContent = Number(score).toFixed(2);

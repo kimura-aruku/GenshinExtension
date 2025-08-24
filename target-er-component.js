@@ -135,7 +135,7 @@ class TargetERComponent {
         const input = document.createElement('input');
         input.type = 'number';
         input.min = '100';
-        input.max = '300';
+        input.max = '999';
         input.step = '1';
         input.value = savedValue || '';
         input.placeholder = '0';
@@ -262,6 +262,9 @@ class TargetERComponent {
      * @returns {Promise<number|null>} 現在の値
      */
     async getCurrentTargetER() {
-        return await this.loadTargetERValue(this.currentCharacterName);
+        // 毎回最新のキャラクター名を検出
+        const currentCharacterName = this.detectCharacterName();
+        const value = await this.loadTargetERValue(currentCharacterName);
+        return value;
     }
 }

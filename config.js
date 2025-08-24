@@ -89,7 +89,6 @@ async function loadCalculationMethod() {
         const result = await chrome.storage.sync.get('selectedCalculationMethod');
         const loadedMethod = result.selectedCalculationMethod || 'STRICT';
         updateCalculationMethod(loadedMethod);
-        console.log(`Loaded calculation method: ${loadedMethod}`);
     } catch (error) {
         console.warn('Failed to load calculation method from storage:', error);
         updateCalculationMethod('STRICT');
@@ -106,8 +105,6 @@ async function loadTargetERDisplaySetting() {
         if (typeof targetERComponent !== 'undefined') {
             targetERComponent.setEnabled(isEnabled);
         }
-        
-        console.log(`Loaded target ER display setting: ${isEnabled}`);
     } catch (error) {
         console.warn('Failed to load target ER display setting from storage:', error);
         // エラーの場合はデフォルト設定（オン）を使用

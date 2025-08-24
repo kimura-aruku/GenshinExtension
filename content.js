@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // スコアを計算し返す
-    async function calculateScore(index){
+    async function calculateScore(index, useTargetER = true){
         // 花、羽、砂、杯、冠 - relic-listの直接の子要素（div）を取得
         const relicElements = relicListElement.children;
         // 上記のいずれか
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     subPropValue = text2;
                     subPropName = normalizeText(text1);
                 }
-                score += Number(await getScore(subPropName, subPropValue));
+                score += Number(await getScore(subPropName, subPropValue, useTargetER));
             }
         }
         return Math.floor(score * 100) / 100;
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 目標チャージ効率を取得
             const targetER = await targetERComponent.getCurrentTargetER();
             
-            if (targetER && targetER > 100) {
+            if (targetER && targetER > 0) {
                 // 目標値が設定されている場合
                 if (erValue <= targetER) {
                     // 目標値以下の場合は通常のスコア計算
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // スコアにして返す（config.jsの定数を使用）
-    async function getScore(subPropName, subPropValue){
+    async function getScore(subPropName, subPropValue, useTargetER = true){
         // ステータス名を正規化
         subPropName = normalizeText(subPropName);
         
@@ -490,9 +490,132 @@ document.addEventListener('DOMContentLoaded', () => {
                 return SCORE_MULTIPLIERS.ELEMENTAL_MASTERY * subPropValue;
             // 元素チャージ効率
             case PROP_NAME.ENERGY_RECHARGE:
-                return await calculateEnergyRechargeScore(subPropValue);
+                if (useTargetER) {
+                    return await calculateEnergyRechargeScore(subPropValue);
+                } else {
+                    // 通常の計算
+                    return SCORE_MULTIPLIERS.ENERGY_RECHARGE * subPropValue;
+                }
             default:
                 return 0;
+        }
+    }
+
+    /**
+     * 指定した聖遺物の元素チャージ効率値を取得
+     * @param {number} index - 聖遺物のインデックス（0-4）
+     * @returns {number} 元素チャージ効率の値
+     */
+    function getERValueFromArtifact(index) {
+        const relicElements = relicListElement.children;
+        const relicElement = relicElements[index];
+        
+        if (!relicElement || !relicElement.classList.contains(SELECTORS.RELIC_ITEM.substring(1))) {
+            return 0;
+        }
+        
+        const subPropElements = relicElement.querySelectorAll(SELECTORS.ARTIFACT_SUB_PROP);
+        let erValue = 0;
+        
+        for (const subPropElement of subPropElements) {
+            const textNodes = getTextNodes(subPropElement);
+            if (textNodes.length === 2) {
+                const text1 = textNodes[0].textContent.trim();
+                const text2 = textNodes[1].textContent.trim();
+                
+                let subPropName, subPropValue;
+                if (/\d/.test(text1)) {
+                    subPropValue = text1;
+                    subPropName = normalizeText(text2);
+                } else {
+                    subPropValue = text2;
+                    subPropName = normalizeText(text1);
+                }
+                
+                // 元素チャージ効率かチェック
+                if (subPropName === PROP_NAME.ENERGY_RECHARGE) {
+                    erValue += parseFloat(subPropValue.replace(/[%+]/g, '').trim());
+                }
+            }
+        }
+        
+        return erValue;
+    }
+
+    /**
+     * 目標チャージ効率に基づいてスコア補正を適用
+     * @param {number[]} scoreList - 各聖遺物のスコア配列
+     * @param {number} totalERValue - 全聖遺物の元素チャージ効率合計
+     * @returns {Promise<{adjustedScoreList: number[], scoreInfo: Object}>} 補正後のスコア配列と削減情報
+     */
+    async function applyTargetERCorrection(scoreList, totalERValue) {
+        try {
+            // 目標チャージ効率表示が無効化されている場合は通常計算
+            if (!targetERComponent.isEnabled) {
+                return {
+                    adjustedScoreList: [...scoreList],
+                    scoreInfo: null
+                };
+            }
+            
+            // 追加ステータスに元素チャージ効率が含まれていない場合は通常計算
+            if (!subPropNames.includes(PROP_NAME.ENERGY_RECHARGE)) {
+                return {
+                    adjustedScoreList: [...scoreList],
+                    scoreInfo: null
+                };
+            }
+            
+            const targetER = await targetERComponent.getCurrentTargetER();
+            
+            // targetERがnullまたは0以下の場合は9999として扱う（実質制限なし）
+            const effectiveTargetER = targetER && targetER > 0 ? targetER : 9999;
+            
+            if (totalERValue <= effectiveTargetER) {
+                // 合計値が目標値以下の場合は削減0で表示
+                const totalOriginalScore = scoreList.reduce((sum, score) => sum + score, 0);
+                return {
+                    adjustedScoreList: [...scoreList],
+                    scoreInfo: {
+                        originalTotal: totalOriginalScore,
+                        reductionTotal: 0,
+                        originalScoreList: [...scoreList]
+                    }
+                };
+            }
+            
+            // 超過分の計算
+            const excessER = totalERValue - effectiveTargetER;
+            const excessScore = SCORE_MULTIPLIERS.ENERGY_RECHARGE * excessER;
+            
+            // 全聖遺物から按分して超過スコアを削減
+            const totalOriginalScore = scoreList.reduce((sum, score) => sum + score, 0);
+            const adjustedScoreList = scoreList.map(score => {
+                if (totalOriginalScore > 0) {
+                    const ratio = score / totalOriginalScore;
+                    const reduction = excessScore * ratio;
+                    return Math.max(0, score - reduction);
+                } else {
+                    return score;
+                }
+            });
+            
+            const finalScoreList = adjustedScoreList.map(score => Math.floor(score * 100) / 100);
+            
+            return {
+                adjustedScoreList: finalScoreList,
+                scoreInfo: {
+                    originalTotal: totalOriginalScore,
+                    reductionTotal: excessScore,
+                    originalScoreList: [...scoreList]
+                }
+            };
+        } catch (error) {
+            console.warn('Failed to apply target ER correction:', error);
+            return {
+                adjustedScoreList: [...scoreList],
+                scoreInfo: null
+            };
         }
     }
 
@@ -504,14 +627,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スコア要素作成
     async function createScoreElement(){
-        // スコア計算
+        // まず通常のスコア計算を実行（目標ER考慮なし）
         let scoreList = [];
+        let totalERValue = 0; // 全聖遺物の元素チャージ効率合計
+        
         for (let i = 0; i < 5; i++){
-            scoreList[i] = await calculateScore(i);
+            scoreList[i] = await calculateScore(i, false); // 通常計算
+            
+            // 各聖遺物の元素チャージ効率を合計
+            const erValueForArtifact = getERValueFromArtifact(i);
+            totalERValue += erValueForArtifact;
         }
+        
+        // 目標チャージ効率に基づく調整を適用
+        const correctionResult = await applyTargetERCorrection(scoreList, totalERValue);
+        const adjustedScoreList = correctionResult.adjustedScoreList;
+        const scoreInfo = correctionResult.scoreInfo;
+        
 
         // スコアコンポーネントを使用して要素作成
-        return await scoreComponent.createScoreElement(scoreList, styleManager, pageLocaleManager);
+        return await scoreComponent.createScoreElement(adjustedScoreList, styleManager, pageLocaleManager, scoreInfo);
     }
 
     // 描画
