@@ -813,57 +813,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // popup からのメッセージを受信
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'CALCULATION_METHOD_CHANGED') {
+            handleCalculationMethodChange(message.method);
+            sendResponse({ success: true });
+        } else if (message.type === 'TARGET_ER_DISPLAY_CHANGED') {
+            handleTargetERDisplayChange(message.enabled);
+            sendResponse({ success: true });
+        }
+    });
+
+    // 計算方式変更のハンドラ
+    async function handleCalculationMethodChange(newMethod) {
+        try {
+            // 設定を更新
+            updateCalculationMethod(newMethod);
+            
+            // 既存のスコア表示要素を削除
+            const existingScoreElement = document.getElementById(EXTENSION_CONFIG.ELEMENT_ID);
+            if (existingScoreElement) {
+                existingScoreElement.remove();
+            }
+            
+            // カスタムイベントをdispatchしてDOMContentLoadedスコープ内の処理に再描画を要求
+            const event = new CustomEvent('genshin-method-changed', { 
+                detail: { method: newMethod } 
+            });
+            document.dispatchEvent(event);
+            
+        } catch (error) {
+            console.error('Failed to handle calculation method change:', error);
+        }
+    }
+
+    // 目標チャージ効率表示設定変更のハンドラ
+    async function handleTargetERDisplayChange(enabled) {
+        try {
+            // 目標チャージ効率コンポーネントの表示・非表示を切り替え
+            targetERComponent.setEnabled(enabled);
+            
+            // 現在表示されているUI要素を更新
+            if (enabled) {
+                await targetERComponent.showTargetERInput(pageLocaleManager);
+            } else {
+                targetERComponent.hideTargetERInput();
+            }
+            
+        } catch (error) {
+            console.error('Failed to handle target ER display change:', error);
+        }
+    }
+
     firstDraw();
 });
-
-// popup からのメッセージを受信
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'CALCULATION_METHOD_CHANGED') {
-        handleCalculationMethodChange(message.method);
-        sendResponse({ success: true });
-    } else if (message.type === 'TARGET_ER_DISPLAY_CHANGED') {
-        handleTargetERDisplayChange(message.enabled);
-        sendResponse({ success: true });
-    }
-});
-
-// 計算方式変更のハンドラ
-async function handleCalculationMethodChange(newMethod) {
-    try {
-        // 設定を更新
-        updateCalculationMethod(newMethod);
-        
-        // 既存のスコア表示要素を削除
-        const existingScoreElement = document.getElementById(EXTENSION_CONFIG.ELEMENT_ID);
-        if (existingScoreElement) {
-            existingScoreElement.remove();
-        }
-        
-        // カスタムイベントをdispatchしてDOMContentLoadedスコープ内の処理に再描画を要求
-        const event = new CustomEvent('genshin-method-changed', { 
-            detail: { method: newMethod } 
-        });
-        document.dispatchEvent(event);
-        
-    } catch (error) {
-        console.error('Failed to handle calculation method change:', error);
-    }
-}
-
-// 目標チャージ効率表示設定変更のハンドラ
-async function handleTargetERDisplayChange(enabled) {
-    try {
-        // 目標チャージ効率コンポーネントの表示・非表示を切り替え
-        targetERComponent.setEnabled(enabled);
-        
-        // 現在表示されているUI要素を更新
-        if (enabled) {
-            await targetERComponent.showTargetERInput(pageLocaleManager);
-        } else {
-            targetERComponent.hideTargetERInput();
-        }
-        
-    } catch (error) {
-        console.error('Failed to handle target ER display change:', error);
-    }
-}
