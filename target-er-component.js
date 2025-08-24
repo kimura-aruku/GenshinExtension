@@ -37,7 +37,8 @@ class TargetERComponent {
             );
 
             const firstTextNode = walker.nextNode();
-            return firstTextNode ? firstTextNode.textContent.trim() : '';
+            const characterName = firstTextNode ? firstTextNode.textContent.trim() : '';
+            return characterName;
         } catch (error) {
             console.error('Failed to detect character name:', error);
             return '';
@@ -156,11 +157,35 @@ class TargetERComponent {
             margin-left: 4px;
         `;
 
-        // 入力イベントリスナー
-        input.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            if (!isNaN(value) && value >= 100) {
+        // 保存ボタン作成
+        const saveButton = document.createElement('button');
+        saveButton.textContent = '保存';
+        saveButton.style.cssText = `
+            margin-left: 8px;
+            padding: 4px 8px;
+            border: 1px solid #4285f4;
+            border-radius: 3px;
+            background: #4285f4;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        `;
+
+        // 保存ボタンのイベントリスナー
+        saveButton.addEventListener('click', () => {
+            const value = parseFloat(input.value);
+            if (!isNaN(value) && value > 0) {
                 this.saveTargetERValue(this.currentCharacterName, value);
+            }
+        });
+
+        // Enterキーでも保存できるようにする
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value > 0) {
+                    this.saveTargetERValue(this.currentCharacterName, value);
+                }
             }
         });
 
@@ -170,6 +195,7 @@ class TargetERComponent {
         inputContainer.style.alignItems = 'center';
         inputContainer.appendChild(input);
         inputContainer.appendChild(unit);
+        inputContainer.appendChild(saveButton);
 
         container.appendChild(label);
         container.appendChild(inputContainer);
@@ -184,7 +210,9 @@ class TargetERComponent {
      */
     async saveTargetERValue(characterName, value) {
         try {
-            if (!characterName) return;
+            if (!characterName) {
+                return;
+            }
             
             const key = `targetER_${characterName}`;
             await chrome.storage.local.set({ [key]: value });
@@ -206,11 +234,14 @@ class TargetERComponent {
      */
     async loadTargetERValue(characterName) {
         try {
-            if (!characterName) return null;
+            if (!characterName) {
+                return null;
+            }
             
             const key = `targetER_${characterName}`;
             const result = await chrome.storage.local.get(key);
-            return result[key] || null;
+            const value = result[key] || null;
+            return value;
             
         } catch (error) {
             console.error('Failed to load target ER value:', error);
