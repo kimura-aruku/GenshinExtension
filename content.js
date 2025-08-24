@@ -729,6 +729,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 目標チャージ効率表示設定を読み込み
         await loadTargetERDisplaySetting();
         
+        // ストレージから読み込んだ設定をtargetERComponentに適用
+        try {
+            const result = await chrome.storage.local.get('targetEnergyRechargeDisplay');
+            const isEnabled = result.targetEnergyRechargeDisplay !== undefined ? result.targetEnergyRechargeDisplay : true;
+            targetERComponent.setEnabled(isEnabled);
+        } catch (error) {
+            console.warn('Failed to load target ER display setting:', error);
+            targetERComponent.setEnabled(true); // デフォルトはオン
+        }
+        
         // ページ言語に応じたPROP_NAMEを初期化
         initializePropNames(pageLocaleManager);
         // 説明用のスタイル取得
