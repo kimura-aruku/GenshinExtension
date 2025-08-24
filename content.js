@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // スコアを計算し返す
-    async function calculateScore(index, useTargetER = true){
+    function calculateScore(index){
         // 花、羽、砂、杯、冠 - relic-listの直接の子要素（div）を取得
         const relicElements = relicListElement.children;
         // 上記のいずれか
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     subPropValue = text2;
                     subPropName = normalizeText(text1);
                 }
-                score += Number(await getScore(subPropName, subPropValue, useTargetER));
+                score += Number(getScore(subPropName, subPropValue));
             }
         }
         return Math.floor(score * 100) / 100;
@@ -412,42 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    /**
-     * 元素チャージ効率のスコア計算（目標値を考慮）
-     * @param {number} erValue - チャージ効率の値
-     * @returns {Promise<number>} スコア
-     */
-    async function calculateEnergyRechargeScore(erValue) {
-        try {
-            // 目標チャージ効率を取得
-            const targetER = await targetERComponent.getCurrentTargetER();
-            
-            if (targetER && targetER > 0) {
-                // 目標値が設定されている場合
-                if (erValue <= targetER) {
-                    // 目標値以下の場合は通常のスコア計算
-                    return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
-                } else {
-                    // 目標値を超過している場合
-                    const excessER = erValue - targetER;
-                    const targetScore = SCORE_MULTIPLIERS.ENERGY_RECHARGE * targetER;
-                    // 超過分は半分のスコアで計算（カスタマイズ可能）
-                    const excessScore = SCORE_MULTIPLIERS.ENERGY_RECHARGE * excessER * 0.5;
-                    return targetScore + excessScore;
-                }
-            } else {
-                // 目標値が設定されていない場合は通常の計算
-                return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
-            }
-        } catch (error) {
-            console.warn('Failed to calculate energy recharge score with target ER:', error);
-            // エラーの場合は通常の計算にフォールバック
-            return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
-        }
-    }
 
     // スコアにして返す（config.jsの定数を使用）
-    async function getScore(subPropName, subPropValue, useTargetER = true){
+    function getScore(subPropName, subPropValue){
         // ステータス名を正規化
         subPropName = normalizeText(subPropName);
         
@@ -490,12 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return SCORE_MULTIPLIERS.ELEMENTAL_MASTERY * subPropValue;
             // 元素チャージ効率
             case PROP_NAME.ENERGY_RECHARGE:
-                if (useTargetER) {
-                    return await calculateEnergyRechargeScore(subPropValue);
-                } else {
-                    // 通常の計算
-                    return SCORE_MULTIPLIERS.ENERGY_RECHARGE * subPropValue;
-                }
+                return SCORE_MULTIPLIERS.ENERGY_RECHARGE * subPropValue;
             default:
                 return 0;
         }
@@ -632,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalERValue = 0; // 全聖遺物の元素チャージ効率合計
         
         for (let i = 0; i < 5; i++){
-            scoreList[i] = await calculateScore(i, false); // 通常計算
+            scoreList[i] = calculateScore(i);
             
             // 各聖遺物の元素チャージ効率を合計
             const erValueForArtifact = getERValueFromArtifact(i);

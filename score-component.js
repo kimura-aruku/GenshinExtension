@@ -156,6 +156,12 @@ class ScoreComponent {
         itemValues.forEach(value => {
             styleManager.applyStyle(STYLE_TYPES.NUMBER, value);
         });
+
+        // 補助情報のスタイル適用（説明文と同じカラー）
+        const auxiliaryElement = element.querySelector('.score-auxiliary');
+        if (auxiliaryElement) {
+            styleManager.applyStyle(STYLE_TYPES.DESCRIPTION, auxiliaryElement);
+        }
     }
 
     /**
