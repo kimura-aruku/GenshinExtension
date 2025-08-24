@@ -6,7 +6,7 @@
     } ],
     "action": {
        "default_popup": "popup.html",
-       "default_title": "__MSG_extensionName__"
+       "default_title": "原神スコア計算機"
     },
     "permissions": [ "storage", "tabs" ],
     "web_accessible_resources": [ {
@@ -19,11 +19,10 @@
        "48": "Icons/Icon48.png",
        "128": "Icons/Icon128.png"
     },
-    "default_locale": "ja",
-    "description": "__MSG_extensionDescription__",
+    "description": "戦績画面で追加ステータスを基準にスコア計算をする拡張",
     "manifest_version": 3,
-    "name": "__MSG_extensionName__",
-    "short_name": "__MSG_extensionShortName__",
+    "name": "原神スコア計算機",
+    "short_name": "スコア計算機",
     "version": "1.00"
  }
  

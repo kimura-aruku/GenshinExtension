@@ -23,7 +23,7 @@ class ScoreComponent {
             this.templateCache = await response.text();
             return this.templateCache;
         } catch (error) {
-            console.error(chrome.i18n.getMessage('errorTemplateLoadFailed'), error);
+            console.error('Failed to load HTML template:', error);
             // フォールバック：最小限のHTMLを返す
             return this.getFallbackTemplate();
         }
@@ -36,9 +36,9 @@ class ScoreComponent {
     getFallbackTemplate() {
         return `
             <div class="score-display" style="width: 100%; display: flex; flex-direction: column;">
-                <div>${chrome.i18n.getMessage('errorScoreDisplayLoadFailed')}</div>
+                <div>Score display element not found</div>
                 <div class="score-total">
-                    <span>${chrome.i18n.getMessage('totalScore')}: </span>
+                    <span>Total Score: </span>
                     <span data-total-score="0.00">0.00</span>
                 </div>
             </div>
@@ -81,21 +81,6 @@ class ScoreComponent {
         return scoreElement;
     }
 
-    /**
-     * 国際化メッセージをHTMLテンプレートに適用する
-     * @param {HTMLElement} element - スコア表示要素
-     */
-    applyI18nMessages(element) {
-        // data-i18n属性を持つ全ての要素を取得してメッセージを適用
-        const i18nElements = element.querySelectorAll('[data-i18n]');
-        i18nElements.forEach(el => {
-            const messageKey = el.getAttribute('data-i18n');
-            const message = chrome.i18n.getMessage(messageKey);
-            if (message) {
-                el.textContent = message;
-            }
-        });
-    }
 
     /**
      * スコア値をHTMLテンプレートに反映する

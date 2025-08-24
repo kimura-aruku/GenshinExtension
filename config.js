@@ -47,8 +47,8 @@ const STAT_MAX_VALUES = Object.freeze({
 const SCORE_CALCULATION_METHODS = Object.freeze({
     // 現在の厳密型計算方式（会心ダメージを基準値とする）
     STRICT: {
-        name: chrome.i18n.getMessage('scoreMethodStrictName'),
-        description: chrome.i18n.getMessage('scoreMethodStrictDescription'),
+        name: '厳密型',
+        description: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...',
         baseValue: STAT_MAX_VALUES.CRIT_DMG,  // 62.2を基準値とする
         multipliers: {
             CRIT_RATE: 2.0,  // 会心率は2倍換算
@@ -64,8 +64,8 @@ const SCORE_CALCULATION_METHODS = Object.freeze({
     
     // 将来追加予定の普及型計算方式
     POPULAR: {
-        name: chrome.i18n.getMessage('scoreMethodPopularName'),
-        description: chrome.i18n.getMessage('scoreMethodPopularDescription'),
+        name: '普及型',
+        description: '会心ダメージ:会心率:攻撃力% = 1:2:1',
         baseValue: STAT_MAX_VALUES.CRIT_DMG,  // 62.2を基準値とする
         multipliers: {
             CRIT_RATE: 2.0,  // 会心率は2倍換算

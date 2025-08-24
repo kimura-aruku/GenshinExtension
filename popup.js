@@ -8,12 +8,12 @@
 // 必要な定数をここで再定義する
 const SCORE_CALCULATION_METHODS = Object.freeze({
     STRICT: {
-        name: chrome.i18n.getMessage('scoreMethodStrictName') || '厳密型',
-        description: chrome.i18n.getMessage('scoreMethodStrictDescription') || '会心ダメージ:会心率:攻撃力% = 1:2:1.333...'
+        name: '厳密型',
+        description: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...'
     },
     POPULAR: {
-        name: chrome.i18n.getMessage('scoreMethodPopularName') || '普及型', 
-        description: chrome.i18n.getMessage('scoreMethodPopularDescription') || '会心ダメージ:会心率:攻撃力% = 1:2:1'
+        name: '普及型', 
+        description: '会心ダメージ:会心率:攻撃力% = 1:2:1'
     }
 });
 
@@ -70,10 +70,15 @@ async function initializeUI() {
  * 国際化対応のテキスト更新
  */
 function updateI18nText() {
+    // 静的なメッセージマッピング
+    const messages = {
+        calculationMethodLabel: 'スコア計算方式:'
+    };
+    
     const i18nElements = document.querySelectorAll('[data-i18n]');
     i18nElements.forEach(element => {
         const key = element.getAttribute('data-i18n');
-        const message = chrome.i18n.getMessage(key);
+        const message = messages[key];
         if (message) {
             element.textContent = message;
         }
