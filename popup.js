@@ -13,39 +13,57 @@ function getMessages() {
         ja: {
             calculationMethodLabel: 'スコア計算方式:',
             scoreMethodStrictName: '厳密型',
-            scoreMethodStrictDescription: '会心ダメージ:会心率:攻撃力% = 1:2:1.333...',
+            scoreMethodStrictDescription: 'スコア係数',
             scoreMethodPopularName: '普及型',
-            scoreMethodPopularDescription: '会心ダメージ:会心率:攻撃力% = 1:2:1'
+            scoreMethodPopularDescription: 'スコア係数',
+            statName: 'ステータス',
+            multiplier: '係数',
+            critDMG: '会心ダメージ',
+            critRate: '会心率',
+            atkPercent: '攻撃力%',
+            hpPercent: 'HP%',
+            defPercent: '防御力%',
+            elementalMastery: '元素熟知',
+            energyRecharge: '元素チャージ効率'
         },
         en: {
             calculationMethodLabel: 'Calculation Method:',
             scoreMethodStrictName: 'Strict',
-            scoreMethodStrictDescription: 'CRIT DMG:CRIT Rate:ATK% = 1:2:1.333...',
+            scoreMethodStrictDescription: 'Score Coefficients',
             scoreMethodPopularName: 'Popular',
-            scoreMethodPopularDescription: 'CRIT DMG:CRIT Rate:ATK% = 1:2:1'
+            scoreMethodPopularDescription: 'Score Coefficients',
+            statName: 'Stat',
+            multiplier: 'Multiplier',
+            critDMG: 'CRIT DMG',
+            critRate: 'CRIT Rate',
+            atkPercent: 'ATK%',
+            hpPercent: 'HP%',
+            defPercent: 'DEF%',
+            elementalMastery: 'Elemental Mastery',
+            energyRecharge: 'Energy Recharge'
         }
     };
     return messages[lang] || messages['ja']; // フォールバック
 }
 
-// config.js から必要な定数を読み込み
-// Manifest V3では content script の変数に直接アクセスできないため、
-// 必要な定数をここで再定義する
-function createScoreCalculationMethods() {
+// config.jsのデータを使用して多言語対応のスコア計算方式オブジェクトを作成
+function createLocalizedScoreCalculationMethods() {
     const messages = getMessages();
     return Object.freeze({
         STRICT: {
             name: messages.scoreMethodStrictName,
-            description: messages.scoreMethodStrictDescription
+            description: messages.scoreMethodStrictDescription,
+            multipliers: SCORE_CALCULATION_METHODS.STRICT.multipliers
         },
         POPULAR: {
             name: messages.scoreMethodPopularName,
-            description: messages.scoreMethodPopularDescription
+            description: messages.scoreMethodPopularDescription,
+            multipliers: SCORE_CALCULATION_METHODS.POPULAR.multipliers
         }
     });
 }
 
-const SCORE_CALCULATION_METHODS = createScoreCalculationMethods();
+const LOCALIZED_SCORE_METHODS = createLocalizedScoreCalculationMethods();
 
 // デフォルト設定
 const DEFAULT_METHOD = 'STRICT';
@@ -120,12 +138,74 @@ function populateMethodOptions() {
     calculationMethodSelect.innerHTML = '';
     
     // 各計算方式をオプションとして追加
-    Object.entries(SCORE_CALCULATION_METHODS).forEach(([key, method]) => {
+    Object.entries(LOCALIZED_SCORE_METHODS).forEach(([key, method]) => {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = method.name;
         calculationMethodSelect.appendChild(option);
     });
+}
+
+/**
+ * スコア係数表のHTMLを生成する
+ * @param {string} methodKey - 計算方式のキー（STRICT/POPULAR）
+ * @returns {string} 表形式のHTML
+ */
+function generateScoreTable(methodKey) {
+    const messages = getMessages();
+    const multipliers = LOCALIZED_SCORE_METHODS[methodKey].multipliers;
+    
+    const statNames = {
+        CRIT_DMG: messages.critDMG,
+        CRIT_RATE: messages.critRate,
+        ATK_PERCENT: messages.atkPercent,
+        HP_PERCENT: messages.hpPercent,
+        DEF_PERCENT: messages.defPercent,
+        ELEMENTAL_MASTERY: messages.elementalMastery,
+        ENERGY_RECHARGE: messages.energyRecharge
+    };
+    
+    // 数値を省略表記に変換
+    const formatMultiplier = (value) => {
+        if (value === 1.0) return '1.0';
+        if (value === 2.0) return '2.0';
+        // 割り切れない数値は3桁で切って省略記号を付ける
+        const rounded = Math.round(value * 1000) / 1000;
+        const str = rounded.toString();
+        if (str !== value.toString() && value % 1 !== 0) {
+            return str + '...';
+        }
+        return rounded.toString();
+    };
+    
+    let tableHTML = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+            <thead>
+                <tr style="background: #f0f0f0;">
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left; font-weight: 500;">${messages.statName}</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: center; font-weight: 500;">${messages.multiplier}</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    Object.entries(multipliers).forEach(([statKey, multiplier]) => {
+        if (multiplier > 0) { // 実数ステータス(0)は表示しない
+            tableHTML += `
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 6px;">${statNames[statKey]}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${formatMultiplier(multiplier)}</td>
+                </tr>
+            `;
+        }
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    
+    return tableHTML;
 }
 
 /**
@@ -164,9 +244,12 @@ async function handleMethodChange(event) {
  * 説明文の更新
  */
 function updateDescription(methodKey) {
-    const method = SCORE_CALCULATION_METHODS[methodKey];
+    const method = LOCALIZED_SCORE_METHODS[methodKey];
     if (method) {
-        methodDescriptionDiv.textContent = method.description;
+        // 簡単な説明文と詳細な係数表を表示
+        const descriptionText = `<div style="margin-bottom: 8px;">${method.description}</div>`;
+        const tableHTML = generateScoreTable(methodKey);
+        methodDescriptionDiv.innerHTML = descriptionText + tableHTML;
     }
 }
 
