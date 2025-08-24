@@ -1,0 +1,32 @@
+<!-- 目標チャージ効率入力コンポーネントのHTMLテンプレート -->
+<div class="target-er-input" style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+  <!-- ラベル部分 -->
+  <span class="target-er-label" data-i18n="targetEnergyRecharge">目標チャージ効率:</span>
+  
+  <!-- 入力部分のコンテナ -->
+  <div class="target-er-input-container" style="display: flex; align-items: center;">
+    <!-- 入力欄 -->
+    <input type="number" 
+           class="target-er-input-field" 
+           max="999" 
+           step="1" 
+           placeholder="0"
+           data-target-er-value=""
+           style="width: 40px; border-radius: 20px; background: transparent; text-align: right; -webkit-appearance: none; -moz-appearance: textfield;">
+    <style>
+      .target-er-input-field::-webkit-outer-spin-button,
+      .target-er-input-field::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    </style>
+    
+    <!-- 単位表示 -->
+    <span class="target-er-unit" style="margin-right: 8px;">%</span>
+    
+    <!-- 保存ボタン -->
+    <button class="target-er-save-button" 
+            data-i18n="save"
+            style="padding: 0 8px; border-radius: 20px; background: transparent; height: 24px;">保存</button>
+  </div>
+</div>

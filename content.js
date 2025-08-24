@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 parent.insertBefore(newDiv, relicListElement);
                 
                 // 目標チャージ効率入力UI を表示（設定が有効な場合）
-                await targetERComponent.showTargetERInput(pageLocaleManager);
+                await targetERComponent.showTargetERInput(pageLocaleManager, styleManager);
             } else {
                 console.error('Required parent element or relic list element not found for score display insertion.');
             }
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 現在表示されているUI要素を更新
             if (enabled) {
-                await targetERComponent.showTargetERInput(pageLocaleManager);
+                await targetERComponent.showTargetERInput(pageLocaleManager, styleManager);
             } else {
                 targetERComponent.hideTargetERInput();
             }

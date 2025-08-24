@@ -10,7 +10,7 @@
     },
     "permissions": [ "storage", "tabs" ],
     "web_accessible_resources": [ {
-       "resources": [ "score-component.html" ],
+       "resources": [ "score-component.html", "target-er-component.html" ],
        "matches": [ "https://act.hoyolab.com/*" ]
     } ],
     "icons": {

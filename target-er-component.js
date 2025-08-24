@@ -7,6 +7,43 @@ class TargetERComponent {
         this.elementId = 'target-er-input';
         this.isEnabled = true; // デフォルトは表示
         this.currentCharacterName = '';
+        this.templateCache = null;
+    }
+
+    /**
+     * HTMLテンプレートを読み込む
+     * @returns {Promise<string>} HTMLテンプレートの内容
+     */
+    async loadTemplate() {
+        if (this.templateCache) {
+            return this.templateCache;
+        }
+
+        try {
+            const response = await fetch(chrome.runtime.getURL('target-er-component.html'));
+            this.templateCache = await response.text();
+            return this.templateCache;
+        } catch (error) {
+            console.error('Failed to load target ER HTML template:', error);
+            return this.getFallbackTemplate();
+        }
+    }
+
+    /**
+     * テンプレート読み込みに失敗した場合のフォールバック
+     * @returns {string} 最小限のHTMLテンプレート
+     */
+    getFallbackTemplate() {
+        return `
+            <div class="target-er-input" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin: 8px 0;">
+                <span class="target-er-label">目標チャージ効率:</span>
+                <div style="display: flex; align-items: center;">
+                    <input type="number" class="target-er-input-field" min="100" max="999" step="1" placeholder="0" data-target-er-value="">
+                    <span class="target-er-unit">%</span>
+                    <button class="target-er-save-button">保存</button>
+                </div>
+            </div>
+        `;
     }
 
     /**
@@ -48,8 +85,9 @@ class TargetERComponent {
     /**
      * 目標チャージ効率入力UIを作成・表示する
      * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
+     * @param {StyleManager} styleManager - スタイル管理インスタンス
      */
-    async showTargetERInput(pageLocaleManager) {
+    async showTargetERInput(pageLocaleManager, styleManager) {
         if (!this.isEnabled) {
             this.hideTargetERInput();
             return;
@@ -75,7 +113,7 @@ class TargetERComponent {
             const savedValue = await this.loadTargetERValue(this.currentCharacterName);
 
             // 入力要素を作成
-            const targetERElement = this.createTargetERElement(pageLocaleManager, savedValue);
+            const targetERElement = await this.createTargetERElement(pageLocaleManager, styleManager, savedValue);
 
             // sub-propsの後に挿入
             subPropsElement.insertAdjacentElement('afterend', targetERElement);
@@ -98,109 +136,153 @@ class TargetERComponent {
     /**
      * 目標チャージ効率入力要素を作成
      * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
+     * @param {StyleManager} styleManager - スタイル管理インスタンス
      * @param {number} savedValue - 保存された値
-     * @returns {HTMLElement} 作成された入力要素
+     * @returns {Promise<HTMLElement>} 作成された入力要素
      */
-    createTargetERElement(pageLocaleManager, savedValue) {
-        const container = document.createElement('div');
-        container.id = this.elementId;
-        container.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            margin: 8px 0;
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-        `;
-
-        // ラベル作成
-        const label = document.createElement('span');
-        label.style.cssText = `
-            font-size: 14px;
-            color: #333;
-            font-weight: 500;
-        `;
+    async createTargetERElement(pageLocaleManager, styleManager, savedValue) {
+        const template = await this.loadTemplate();
         
-        // 多言語対応
-        const messages = {
-            'ja': '目標チャージ効率:',
-            'en': 'Target Energy Recharge:'
-        };
-        const currentLang = pageLocaleManager.currentPageLocale || 'ja';
-        label.textContent = messages[currentLang] || messages['ja'];
+        // 一時的なコンテナでHTMLを解析
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = template;
+        
+        // メインの要素を取得
+        const targetERElement = tempContainer.querySelector('.target-er-input');
+        if (!targetERElement) {
+            throw new Error('Target ER element not found in template');
+        }
 
-        // 入力欄作成
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.min = '100';
-        input.max = '999';
-        input.step = '1';
-        input.value = savedValue || '';
-        input.placeholder = '0';
-        input.style.cssText = `
-            width: 80px;
-            padding: 4px 8px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            font-size: 13px;
-            text-align: center;
-        `;
+        // IDを設定
+        targetERElement.id = this.elementId;
+        
+        // 言語対応のテキスト更新
+        this.updateLocalizedText(targetERElement, pageLocaleManager);
+        
+        // 保存された値を設定
+        const inputField = targetERElement.querySelector('.target-er-input-field');
+        if (inputField && savedValue) {
+            inputField.value = savedValue;
+        }
+        
+        // スタイルを適用
+        this.applyStyles(targetERElement, styleManager);
+        
+        // イベントリスナーを設定
+        this.setupEventListeners(targetERElement);
 
-        // 単位ラベル
-        const unit = document.createElement('span');
-        unit.textContent = '%';
-        unit.style.cssText = `
-            font-size: 14px;
-            color: #666;
-            margin-left: 4px;
-        `;
-
-        // 保存ボタン作成
-        const saveButton = document.createElement('button');
-        saveButton.textContent = '保存';
-        saveButton.style.cssText = `
-            margin-left: 8px;
-            padding: 4px 8px;
-            border: 1px solid #4285f4;
-            border-radius: 3px;
-            background: #4285f4;
-            color: white;
-            font-size: 12px;
-            cursor: pointer;
-        `;
-
-        // 保存ボタンのイベントリスナー
-        saveButton.addEventListener('click', () => {
-            const value = parseFloat(input.value);
-            if (!isNaN(value) && value > 0) {
-                this.saveTargetERValue(this.currentCharacterName, value);
+        return targetERElement;
+    }
+    
+    /**
+     * ローカライズされたテキストを更新する
+     * @param {HTMLElement} targetERElement - 目標ER要素
+     * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
+     */
+    updateLocalizedText(targetERElement, pageLocaleManager) {
+        // data-i18n属性を持つ全ての要素を取得
+        const i18nElements = targetERElement.querySelectorAll('[data-i18n]');
+        
+        i18nElements.forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            if (key === 'targetEnergyRecharge') {
+                // 多言語対応
+                const messages = {
+                    'ja': '目標チャージ効率:',
+                    'en': 'Target Energy Recharge:'
+                };
+                const currentLang = pageLocaleManager.currentPageLocale || 'ja';
+                element.textContent = messages[currentLang] || messages['ja'];
+            } else if (key === 'save') {
+                const messages = {
+                    'ja': '保存',
+                    'en': 'Save'
+                };
+                const currentLang = pageLocaleManager.currentPageLocale || 'ja';
+                element.textContent = messages[currentLang] || messages['ja'];
             }
         });
-
-        // Enterキーでも保存できるようにする
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const value = parseFloat(input.value);
-                if (!isNaN(value) && value > 0) {
-                    this.saveTargetERValue(this.currentCharacterName, value);
+    }
+    
+    /**
+     * オリジナルページのスタイルを適用する
+     * @param {HTMLElement} targetERElement - 目標ER要素
+     * @param {StyleManager} styleManager - スタイル管理インスタンス
+     */
+    applyStyles(targetERElement, styleManager) {
+        // ラベルのスタイル適用
+        const labelElement = targetERElement.querySelector('.target-er-label');
+        if (labelElement) {
+            styleManager.applyStyle(STYLE_TYPES.LABEL, labelElement);
+        }
+        
+        // 単位のスタイル適用
+        const unitElement = targetERElement.querySelector('.target-er-unit');
+        if (unitElement) {
+            styleManager.applyStyle(STYLE_TYPES.LABEL, unitElement);
+        }
+        
+        // 入力欄のスタイル適用
+        const inputElement = targetERElement.querySelector('.target-er-input-field');
+        if (inputElement) {
+            styleManager.applyStyle(STYLE_TYPES.NUMBER, inputElement);
+        }
+        
+        // 保存ボタンのスタイル適用
+        const saveButton = targetERElement.querySelector('.target-er-save-button');
+        if (saveButton) {
+            styleManager.applyStyle(STYLE_TYPES.LABEL, saveButton);
+        }
+    }
+    
+    /**
+     * イベントリスナーを設定する
+     * @param {HTMLElement} targetERElement - 目標ER要素
+     */
+    setupEventListeners(targetERElement) {
+        const inputField = targetERElement.querySelector('.target-er-input-field');
+        const saveButton = targetERElement.querySelector('.target-er-save-button');
+        
+        if (saveButton) {
+            // 保存ボタンのイベントリスナー
+            saveButton.addEventListener('click', () => {
+                if (inputField) {
+                    const value = parseFloat(inputField.value);
+                    if (!isNaN(value) && value > 0) {
+                        this.saveTargetERValue(this.currentCharacterName, value);
+                    }
                 }
-            }
-        });
-
-        // 要素を組み立て
-        const inputContainer = document.createElement('div');
-        inputContainer.style.display = 'flex';
-        inputContainer.style.alignItems = 'center';
-        inputContainer.appendChild(input);
-        inputContainer.appendChild(unit);
-        inputContainer.appendChild(saveButton);
-
-        container.appendChild(label);
-        container.appendChild(inputContainer);
-
-        return container;
+            });
+        }
+        
+        if (inputField) {
+            // 入力値制限（3桁まで、数値のみ）
+            inputField.addEventListener('input', (e) => {
+                let value = e.target.value;
+                // 数値以外の文字を除去（e、+、-、.なども含む）
+                value = value.replace(/[^0-9]/g, '');
+                // 3桁を超える場合は3桁に切り詰め
+                if (value.length > 3) {
+                    value = value.slice(0, 3);
+                }
+                // 999を超える場合は999に制限
+                const numValue = parseInt(value);
+                if (numValue > 999) {
+                    value = '999';
+                }
+                e.target.value = value;
+            });
+            
+            // Enterキーでも保存できるようにする
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const value = parseFloat(inputField.value);
+                    if (!isNaN(value) && value > 0) {
+                        this.saveTargetERValue(this.currentCharacterName, value);
+                    }
+                }
+            });
+        }
     }
 
     /**
