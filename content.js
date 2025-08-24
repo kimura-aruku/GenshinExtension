@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ARTIFACT_INFO: '.artifact-info',
         ARTIFACT_INFO_HEADER: '.artifact-info header',
         RELIC_LIST: '.relic-list',
+        RELIC_ITEM: '.relic-item',
         ARTIFACT_SUB_PROP: '.artifact-sub-prop',
         
         // 追加ステータス関連
@@ -366,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // スコアを計算し返す
     function calculateScore(index){
         // 花、羽、砂、杯、冠
-        const relicElements = relicListElement.querySelectorAll('.relic-item');
+        const relicElements = relicListElement.querySelectorAll(SELECTORS.RELIC_ITEM);
         // 上記のいずれか
         const relicElement = relicElements[index];
         // 聖遺物1つあたりが持つサブステータス要素すべて
