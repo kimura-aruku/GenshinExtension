@@ -23,7 +23,8 @@ function getMessages() {
             hpPercent: 'HP%',
             defPercent: '防御力%',
             elementalMastery: '元素熟知',
-            energyRecharge: '元素チャージ効率'
+            energyRecharge: '元素チャージ効率',
+            targetEnergyRechargeDisplay: '目標チャージ効率 表示'
         },
         en: {
             calculationMethodLabel: 'Calculation Method:',
@@ -38,7 +39,8 @@ function getMessages() {
             hpPercent: 'HP%',
             defPercent: 'DEF%',
             elementalMastery: 'Elemental Mastery',
-            energyRecharge: 'Energy Recharge'
+            energyRecharge: 'Energy Recharge',
+            targetEnergyRechargeDisplay: 'Target Energy Recharge Display'
         }
     };
     return messages[lang] || messages['ja']; // フォールバック
@@ -66,10 +68,12 @@ const LOCALIZED_SCORE_METHODS = createLocalizedScoreCalculationMethods();
 // デフォルト設定
 const DEFAULT_METHOD = 'STRICT';
 const STORAGE_KEY = 'selectedCalculationMethod';
+const TARGET_ER_DISPLAY_KEY = 'targetEnergyRechargeDisplay';
 
 // DOM要素
 let calculationMethodSelect;
 let methodDescriptionDiv;
+let targetEnergyRechargeToggle;
 let statusDiv;
 
 // 初期化
@@ -85,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initializeElements() {
     calculationMethodSelect = document.getElementById('calculationMethod');
     methodDescriptionDiv = document.getElementById('methodDescription');
+    targetEnergyRechargeToggle = document.getElementById('targetEnergyRechargeToggle');
     statusDiv = document.getElementById('status');
 }
 
@@ -101,10 +106,12 @@ async function initializeUI() {
         
         // 保存された設定を読み込み
         const savedMethod = await loadSavedMethod();
+        const savedToggleState = await loadTargetERDisplaySetting();
         
         // 選択状態を復元
         calculationMethodSelect.value = savedMethod;
         updateDescription(savedMethod);
+        updateToggleState(savedToggleState);
         
     } catch (error) {
         console.error('Failed to initialize popup UI:', error);
@@ -211,6 +218,7 @@ function generateScoreTable(methodKey) {
  */
 function setupEventListeners() {
     calculationMethodSelect.addEventListener('change', handleMethodChange);
+    targetEnergyRechargeToggle.addEventListener('click', handleToggleChange);
 }
 
 /**
@@ -322,6 +330,80 @@ async function notifyContentScript(selectedMethod) {
         
         // 通知完了（詳細ログは不要）
         
+    } catch (error) {
+        console.error('Failed to query tabs or send notifications:', error);
+    }
+}
+
+/**
+ * トグル変更のハンドラ
+ */
+async function handleToggleChange() {
+    const isActive = targetEnergyRechargeToggle.classList.contains('active');
+    const newState = !isActive;
+    
+    try {
+        // 設定を保存
+        await chrome.storage.local.set({ [TARGET_ER_DISPLAY_KEY]: newState });
+        
+        // UI状態を更新
+        updateToggleState(newState);
+        
+        // content scriptに通知
+        await notifyTargetERDisplayChange(newState);
+        
+    } catch (error) {
+        console.error('Failed to save toggle setting:', error);
+        showStatus('設定の保存に失敗しました', 'error');
+    }
+}
+
+/**
+ * トグル状態を更新
+ */
+function updateToggleState(isActive) {
+    if (isActive) {
+        targetEnergyRechargeToggle.classList.add('active');
+    } else {
+        targetEnergyRechargeToggle.classList.remove('active');
+    }
+}
+
+/**
+ * 目標チャージ効率表示設定を読み込み
+ */
+async function loadTargetERDisplaySetting() {
+    try {
+        const result = await chrome.storage.local.get(TARGET_ER_DISPLAY_KEY);
+        return result[TARGET_ER_DISPLAY_KEY] !== undefined ? result[TARGET_ER_DISPLAY_KEY] : true; // デフォルトはオン
+    } catch (error) {
+        console.error('Failed to load target ER display setting:', error);
+        return true; // デフォルト値
+    }
+}
+
+/**
+ * content scriptに目標チャージ効率表示変更を通知
+ */
+async function notifyTargetERDisplayChange(isEnabled) {
+    try {
+        const tabs = await chrome.tabs.query({
+            url: 'https://act.hoyolab.com/app/community-game-records-sea/index.html*'
+        });
+        
+        for (const tab of tabs) {
+            try {
+                await chrome.tabs.sendMessage(tab.id, {
+                    type: 'TARGET_ER_DISPLAY_CHANGED',
+                    enabled: isEnabled
+                });
+            } catch (error) {
+                // content scriptが読み込まれていない場合は警告を出さない
+                if (error.message !== 'Could not establish connection. Receiving end does not exist.') {
+                    console.warn(`Failed to notify tab ${tab.id}:`, error.message);
+                }
+            }
+        }
     } catch (error) {
         console.error('Failed to query tabs or send notifications:', error);
     }

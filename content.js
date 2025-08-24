@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ページ言語管理インスタンス（page-locale-manager.jsから読み込み）
     const pageLocaleManager = new PageLocaleManager();
     
+    // 目標チャージ効率管理インスタンス（target-er-component.jsから読み込み）
+    const targetERComponent = new TargetERComponent();
+    
 
     /**
      * DOM監視・検知管理クラス
@@ -371,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // スコアを計算し返す
-    function calculateScore(index){
+    async function calculateScore(index){
         // 花、羽、砂、杯、冠 - relic-listの直接の子要素（div）を取得
         const relicElements = relicListElement.children;
         // 上記のいずれか
@@ -385,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 聖遺物1つあたりが持つサブステータス要素すべて
         const subPropElements = relicElement.querySelectorAll(SELECTORS.ARTIFACT_SUB_PROP);
         let score = 0;
-        subPropElements.forEach(subPropElement => {
+        for (const subPropElement of subPropElements) {
             // テキストノードを取得
             const textNodes = getTextNodes(subPropElement);
             // 2つの文字列を取得
@@ -401,16 +404,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     subPropValue = text2;
                     subPropName = normalizeText(text1);
                 }
-                score += Number(getScore(subPropName, subPropValue));
+                score += Number(await getScore(subPropName, subPropValue));
             }
-        });
+        }
         return Math.floor(score * 100) / 100;
     }
 
 
 
+    /**
+     * 元素チャージ効率のスコア計算（目標値を考慮）
+     * @param {number} erValue - チャージ効率の値
+     * @returns {Promise<number>} スコア
+     */
+    async function calculateEnergyRechargeScore(erValue) {
+        try {
+            // 目標チャージ効率を取得
+            const targetER = await targetERComponent.getCurrentTargetER();
+            
+            if (targetER && targetER > 100) {
+                // 目標値が設定されている場合
+                if (erValue <= targetER) {
+                    // 目標値以下の場合は通常のスコア計算
+                    return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
+                } else {
+                    // 目標値を超過している場合
+                    const excessER = erValue - targetER;
+                    const targetScore = SCORE_MULTIPLIERS.ENERGY_RECHARGE * targetER;
+                    // 超過分は半分のスコアで計算（カスタマイズ可能）
+                    const excessScore = SCORE_MULTIPLIERS.ENERGY_RECHARGE * excessER * 0.5;
+                    return targetScore + excessScore;
+                }
+            } else {
+                // 目標値が設定されていない場合は通常の計算
+                return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
+            }
+        } catch (error) {
+            console.warn('Failed to calculate energy recharge score with target ER:', error);
+            // エラーの場合は通常の計算にフォールバック
+            return SCORE_MULTIPLIERS.ENERGY_RECHARGE * erValue;
+        }
+    }
+
     // スコアにして返す（config.jsの定数を使用）
-    function getScore(subPropName, subPropValue){
+    async function getScore(subPropName, subPropValue){
         // ステータス名を正規化
         subPropName = normalizeText(subPropName);
         
@@ -453,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return SCORE_MULTIPLIERS.ELEMENTAL_MASTERY * subPropValue;
             // 元素チャージ効率
             case PROP_NAME.ENERGY_RECHARGE:
-                return SCORE_MULTIPLIERS.ENERGY_RECHARGE * subPropValue;
+                return await calculateEnergyRechargeScore(subPropValue);
             default:
                 return 0;
         }
@@ -470,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // スコア計算
         let scoreList = [];
         for (let i = 0; i < 5; i++){
-            scoreList[i] = calculateScore(i);
+            scoreList[i] = await calculateScore(i);
         }
 
         // スコアコンポーネントを使用して要素作成
@@ -505,6 +542,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const newDiv = await createScoreElement();
                 parent.insertBefore(newDiv, relicListElement);
+                
+                // 目標チャージ効率入力UI を表示（設定が有効な場合）
+                await targetERComponent.showTargetERInput(pageLocaleManager);
             } else {
                 console.error('Required parent element or relic list element not found for score display insertion.');
             }
@@ -584,6 +624,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         pageLocaleManager.detectPageLanguage(languageSelectorElement);
         
+        // 目標チャージ効率表示設定を読み込み
+        await loadTargetERDisplaySetting();
+        
         // ページ言語に応じたPROP_NAMEを初期化
         initializePropNames(pageLocaleManager);
         // 説明用のスタイル取得
@@ -659,6 +702,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 目標チャージ効率変更時の再描画用イベントリスナー
+    document.addEventListener('target-er-changed', async (event) => {
+        try {
+            await draw();
+        } catch (error) {
+            console.error('Failed to redraw after target ER change:', error);
+        }
+    });
+
     firstDraw();
 });
 
@@ -666,6 +718,9 @@ document.addEventListener('DOMContentLoaded', () => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'CALCULATION_METHOD_CHANGED') {
         handleCalculationMethodChange(message.method);
+        sendResponse({ success: true });
+    } else if (message.type === 'TARGET_ER_DISPLAY_CHANGED') {
+        handleTargetERDisplayChange(message.enabled);
         sendResponse({ success: true });
     }
 });
@@ -690,5 +745,23 @@ async function handleCalculationMethodChange(newMethod) {
         
     } catch (error) {
         console.error('Failed to handle calculation method change:', error);
+    }
+}
+
+// 目標チャージ効率表示設定変更のハンドラ
+async function handleTargetERDisplayChange(enabled) {
+    try {
+        // 目標チャージ効率コンポーネントの表示・非表示を切り替え
+        targetERComponent.setEnabled(enabled);
+        
+        // 現在表示されているUI要素を更新
+        if (enabled) {
+            await targetERComponent.showTargetERInput(pageLocaleManager);
+        } else {
+            targetERComponent.hideTargetERInput();
+        }
+        
+    } catch (error) {
+        console.error('Failed to handle target ER display change:', error);
     }
 }

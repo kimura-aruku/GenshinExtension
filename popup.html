@@ -78,6 +78,55 @@
             color: #c62828;
             border: 1px solid #ffcdd2;
         }
+        
+        .toggle-section {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #4285f4;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+        
+        .toggle-label {
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -92,6 +141,15 @@
         </select>
         <div id="methodDescription" class="description">
             <!-- 説明文は JavaScript で動的に更新 -->
+        </div>
+    </div>
+    
+    <div class="toggle-section">
+        <div class="toggle-container">
+            <div id="targetEnergyRechargeToggle" class="toggle-switch active">
+                <div class="toggle-slider"></div>
+            </div>
+            <span class="toggle-label" data-i18n="targetEnergyRechargeDisplay">目標チャージ効率 表示</span>
         </div>
     </div>
     

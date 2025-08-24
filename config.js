@@ -96,6 +96,27 @@ async function loadCalculationMethod() {
     }
 }
 
+// 目標チャージ効率表示設定を読み込み
+async function loadTargetERDisplaySetting() {
+    try {
+        const result = await chrome.storage.local.get('targetEnergyRechargeDisplay');
+        const isEnabled = result.targetEnergyRechargeDisplay !== undefined ? result.targetEnergyRechargeDisplay : true; // デフォルトはオン
+        
+        // targetERComponentが利用可能であれば設定を適用
+        if (typeof targetERComponent !== 'undefined') {
+            targetERComponent.setEnabled(isEnabled);
+        }
+        
+        console.log(`Loaded target ER display setting: ${isEnabled}`);
+    } catch (error) {
+        console.warn('Failed to load target ER display setting from storage:', error);
+        // エラーの場合はデフォルト設定（オン）を使用
+        if (typeof targetERComponent !== 'undefined') {
+            targetERComponent.setEnabled(true);
+        }
+    }
+}
+
 // 現在の設定から計算倍率を取得する関数
 function getCurrentScoreMultipliers() {
     // windowオブジェクトから最新の値を取得
