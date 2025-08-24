@@ -313,7 +313,10 @@ async function notifyContentScript(selectedMethod) {
                 successCount++;
             } catch (error) {
                 errorCount++;
-                console.warn(`Failed to notify tab ${tab.id}:`, error.message);
+                // content scriptが読み込まれていない場合は警告を出さない
+                if (error.message !== 'Could not establish connection. Receiving end does not exist.') {
+                    console.warn(`Failed to notify tab ${tab.id}:`, error.message);
+                }
             }
         }
         
