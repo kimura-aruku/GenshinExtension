@@ -520,11 +520,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
             
-            // 追加ステータスに元素チャージ効率が含まれていない場合は通常計算
+            // 追加ステータスに元素チャージ効率が含まれていない場合でも、表示用の情報を返す
             if (!subPropNames.includes(PROP_NAME.ENERGY_RECHARGE)) {
+                const totalOriginalScore = scoreList.reduce((sum, score) => sum + score, 0);
                 return {
                     adjustedScoreList: [...scoreList],
-                    scoreInfo: null
+                    scoreInfo: {
+                        originalTotal: totalOriginalScore,
+                        reductionTotal: 0,
+                        originalScoreList: [...scoreList]
+                    }
                 };
             }
             

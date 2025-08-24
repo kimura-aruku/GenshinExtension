@@ -104,18 +104,13 @@ class ScoreComponent {
             const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
             const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
             
-            // 小計スコア、超過スコア項目を表示
-            element.querySelector('.score-subtotal').style.display = 'flex';
-            element.querySelector('.score-over').style.display = 'flex';
-            
             if (subtotalElement) subtotalElement.textContent = displayOriginalTotal.toFixed(2);
             if (overElement) overElement.textContent = displayReductionTotal.toFixed(2);
             if (totalScoreElement) totalScoreElement.textContent = displayAdjustedTotal.toFixed(2);
         } else {
-            // 目標チャージ効率表示がオフの場合：小計・超過スコアを非表示、合計スコアのみ表示
-            element.querySelector('.score-subtotal').style.display = 'none';
-            element.querySelector('.score-over').style.display = 'none';
-            
+            // 目標チャージ効率表示がオフの場合：小計・超過スコアは空、合計スコアのみ表示
+            if (subtotalElement) subtotalElement.textContent = '';
+            if (overElement) overElement.textContent = '';
             if (totalScoreElement) totalScoreElement.textContent = totalScore.toFixed(2);
         }
 
