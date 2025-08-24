@@ -6,7 +6,7 @@ class PageLocaleManager {
     constructor() {
         // 現在のページ言語
         this.currentPageLocale = null;
-        this.fallbackLocale = 'en';
+        this.fallbackLocale = 'ja';
         
         // サポート言語リスト
         this.supportedLocales = ['ja', 'en'];
@@ -39,7 +39,8 @@ class PageLocaleManager {
                 statCritRate: 'CRIT Rate',
                 statCritDMG: 'CRIT DMG',
                 statElementalMastery: 'Elemental Mastery',
-                statEnergyRecharge: 'Energy Recharge'
+                statEnergyRecharge: 'Energy Recharge',
+                noArtifactsEquipped: 'No Artifacts equipped'
             },
             ja: {
                 setupKeywordHighlightedStats: 'ハイライトされたステータス',
@@ -59,7 +60,8 @@ class PageLocaleManager {
                 statCritRate: '会心率',
                 statCritDMG: '会心ダメージ',
                 statElementalMastery: '元素熟知',
-                statEnergyRecharge: '元素チャージ効率'
+                statEnergyRecharge: '元素チャージ効率',
+                noArtifactsEquipped: '聖遺物を装備していません'
             }
         };
     }

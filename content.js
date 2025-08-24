@@ -295,11 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return isInViewport && hasDimensions && isVisibleInCSS;
     }
 
-    // ステータス名を正規化する関数
-    function normalizeStatName(statName) {
-        if (!statName) return '';
+    // テキストを正規化する関数
+    function normalizeText(text) {
+        if (!text) return '';
         // 非改行スペース(&nbsp;)を通常スペースに変換し、前後の空白を除去
-        return statName.replace(/\u00A0/g, ' ').trim();
+        return text.replace(/\u00A0/g, ' ').trim();
     }
 
     // 聖遺物未装備かどうかをチェックする関数
@@ -312,12 +312,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // artifact-info以下のp要素をチェック
         const pElements = artifactInfoElement.querySelectorAll('p');
         
-        // 国際化された「装備なし」メッセージをチェック
-        const noArtifactsMessage = chrome.i18n.getMessage('noArtifactsEquipped');
+        // ページの言語設定に基づく「装備なし」メッセージをチェック
+        // pageLocaleManagerが初期化されていない場合は、まず初期化を試行
+        if (!pageLocaleManager.currentPageLocale && languageSelectorElement) {
+            pageLocaleManager.detectPageLanguage(languageSelectorElement);
+        }
+        
+        const noArtifactsMessage = pageLocaleManager.getMessage('noArtifactsEquipped');
+        const normalizedMessage = normalizeText(noArtifactsMessage);
         
         for (const pElement of pElements) {
-            const textContent = pElement.textContent?.trim() || '';
-            if (textContent === noArtifactsMessage) {
+            const textContent = normalizeText(pElement.textContent) || '';
+            if (textContent === normalizedMessage) {
                 return true;
             }
         }
@@ -340,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 textContent = childText.map(node => node.textContent).join('');
             }
             // ステータス名を正規化
-            return normalizeStatName(textContent);
+            return normalizeText(textContent);
         });
         
     }
@@ -390,10 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 数値を含む文字列をそれぞれ取得
                 if (/\d/.test(text1)) {
                     subPropValue = text1;
-                    subPropName = normalizeStatName(text2);
+                    subPropName = normalizeText(text2);
                 } else {
                     subPropValue = text2;
-                    subPropName = normalizeStatName(text1);
+                    subPropName = normalizeText(text1);
                 }
                 score += Number(getScore(subPropName, subPropValue));
             }
@@ -406,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // スコアにして返す（config.jsの定数を使用）
     function getScore(subPropName, subPropValue){
         // ステータス名を正規化
-        subPropName = normalizeStatName(subPropName);
+        subPropName = normalizeText(subPropName);
         
         // 実数かパーセントか判断できない状態
         const isRealOrPercent = [PROP_NAME.HP, PROP_NAME.ATK, PROP_NAME.DEF]
