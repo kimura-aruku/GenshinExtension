@@ -93,22 +93,30 @@ class ScoreComponent {
         // 合計スコアを計算
         const totalScore = scoreList.reduce((sum, score) => sum + Number(score), 0);
 
-        // 合計スコアを更新
+        // スコア項目を更新
+        const subtotalElement = element.querySelector('[data-subtotal-score]');
+        const overElement = element.querySelector('[data-over-score]');
         const totalScoreElement = element.querySelector('[data-total-score]');
-        if (totalScoreElement) {
-            if (scoreInfo && scoreInfo.originalTotal !== undefined && scoreInfo.reductionTotal !== undefined) {
-                // 表示用の数値を四捨五入して計算
-                const displayOriginalTotal = Number(scoreInfo.originalTotal.toFixed(2));
-                const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
-                const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
-                
-                // 調整がある場合は「調整後（元 - 削減）」形式で表示
-                const displayText = `${displayAdjustedTotal.toFixed(2)}（${displayOriginalTotal.toFixed(2)} - ${displayReductionTotal.toFixed(2)}）`;
-                totalScoreElement.textContent = displayText;
-            } else {
-                // 通常表示
-                totalScoreElement.textContent = totalScore.toFixed(2);
-            }
+
+        if (scoreInfo && scoreInfo.originalTotal !== undefined && scoreInfo.reductionTotal !== undefined) {
+            // 目標チャージ効率表示がオンの場合：3つのスコアを表示
+            const displayOriginalTotal = Number(scoreInfo.originalTotal.toFixed(2));
+            const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
+            const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
+            
+            // 小計スコア、超過スコア項目を表示
+            element.querySelector('.score-subtotal').style.display = 'flex';
+            element.querySelector('.score-over').style.display = 'flex';
+            
+            if (subtotalElement) subtotalElement.textContent = displayOriginalTotal.toFixed(2);
+            if (overElement) overElement.textContent = displayReductionTotal.toFixed(2);
+            if (totalScoreElement) totalScoreElement.textContent = displayAdjustedTotal.toFixed(2);
+        } else {
+            // 目標チャージ効率表示がオフの場合：小計・超過スコアを非表示、合計スコアのみ表示
+            element.querySelector('.score-subtotal').style.display = 'none';
+            element.querySelector('.score-over').style.display = 'none';
+            
+            if (totalScoreElement) totalScoreElement.textContent = totalScore.toFixed(2);
         }
 
         // 個別スコアを更新（常に元のスコアを表示）
@@ -133,17 +141,23 @@ class ScoreComponent {
             styleManager.applyStyle(STYLE_TYPES.DESCRIPTION, descriptionElement);
         }
 
-        // ラベルのスタイル適用（合計スコアラベル）
+        // ラベルのスタイル適用（小計、超過、合計スコアラベル）
+        const subtotalLabelElement = element.querySelector('.score-subtotal-label');
+        const overLabelElement = element.querySelector('.score-over-label');
         const totalLabelElement = element.querySelector('.score-total-label');
-        if (totalLabelElement) {
-            styleManager.applyStyle(STYLE_TYPES.LABEL, totalLabelElement);
-        }
+        
+        if (subtotalLabelElement) styleManager.applyStyle(STYLE_TYPES.LABEL, subtotalLabelElement);
+        if (overLabelElement) styleManager.applyStyle(STYLE_TYPES.LABEL, overLabelElement);
+        if (totalLabelElement) styleManager.applyStyle(STYLE_TYPES.LABEL, totalLabelElement);
 
-        // 数値のスタイル適用（合計スコア値）
+        // 数値のスタイル適用（小計、超過、合計スコア値）
+        const subtotalValueElement = element.querySelector('.score-subtotal-value');
+        const overValueElement = element.querySelector('.score-over-value');
         const totalValueElement = element.querySelector('.score-total-value');
-        if (totalValueElement) {
-            styleManager.applyStyle(STYLE_TYPES.NUMBER, totalValueElement);
-        }
+        
+        if (subtotalValueElement) styleManager.applyStyle(STYLE_TYPES.NUMBER, subtotalValueElement);
+        if (overValueElement) styleManager.applyStyle(STYLE_TYPES.NUMBER, overValueElement);
+        if (totalValueElement) styleManager.applyStyle(STYLE_TYPES.NUMBER, totalValueElement);
 
         // 個別スコアのラベルと値にスタイル適用
         const itemLabels = element.querySelectorAll('.score-item-label');
@@ -156,12 +170,6 @@ class ScoreComponent {
         itemValues.forEach(value => {
             styleManager.applyStyle(STYLE_TYPES.NUMBER, value);
         });
-
-        // 補助情報のスタイル適用（説明文と同じカラー）
-        const auxiliaryElement = element.querySelector('.score-auxiliary');
-        if (auxiliaryElement) {
-            styleManager.applyStyle(STYLE_TYPES.DESCRIPTION, auxiliaryElement);
-        }
     }
 
     /**

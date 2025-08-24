@@ -1,16 +1,30 @@
 <!-- スコア表示コンポーネントのHTMLテンプレート -->
 <div class="score-display" style="width: 100%; display: flex; flex-direction: column; gap: 0; align-items: center;">
-  <!-- 1行目: 説明文と合計スコア -->
+  <!-- 1行目: 説明文と3つのスコア項目 -->
   <div class="score-header" style="display: flex; width: 100%;">
-    <!-- 説明文 -->
+    <!-- 説明文（2/5の幅） -->
     <div class="score-description" 
-         style="flex: 3; padding-right: calc(8 * 2px + 12 * 2px); display: flex; align-items: center; justify-content: flex-start; margin-right: calc(12 * 2px);">
+         style="flex: 2; padding-right: calc(8px + 2 * 12px); display: flex; align-items: center; justify-content: flex-start; margin-right: calc(8px + 2 * 12px);">
       <span data-i18n="scoreDescription">スコアは追加ステータスから算出されます。</span>
     </div>
     
-    <!-- 合計スコア -->
+    <!-- 小計スコア（score-itemと同じサイズ） -->
+    <div class="score-subtotal" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-subtotal-label">小計スコア</span>
+      <span class="score-subtotal-value" data-subtotal-score="0.00">0.00</span>
+    </div>
+    
+    <!-- 超過スコア（score-itemと同じサイズ） -->
+    <div class="score-over" 
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center; margin-right: 12px;">
+      <span class="score-over-label">超過スコア</span>
+      <span class="score-over-value" data-over-score="0.00">0.00</span>
+    </div>
+    
+    <!-- 合計スコア（score-itemと同じサイズ） -->
     <div class="score-total" 
-         style="display: flex; justify-content: space-between; flex: 2; padding: 0 8px 0 0; align-items: center;">
+         style="display: flex; justify-content: space-between; flex: 1; padding: 10px 8px 10px 12px; align-items: center;">
       <span class="score-total-label" data-i18n="totalScore">合計スコア</span>
       <span class="score-total-value" data-total-score="0.00">0.00</span>
     </div>
