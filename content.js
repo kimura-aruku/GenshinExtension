@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (const pElement of pElements) {
             const textContent = pElement.textContent?.trim() || '';
-            if (textContent.includes(noArtifactsMessage)) {
+            if (textContent === noArtifactsMessage) {
                 return true;
             }
         }
@@ -366,10 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // スコアを計算し返す
     function calculateScore(index){
-        // 花、羽、砂、杯、冠
-        const relicElements = relicListElement.querySelectorAll(SELECTORS.RELIC_ITEM);
+        // 花、羽、砂、杯、冠 - relic-listの直接の子要素（div）を取得
+        const relicElements = relicListElement.children;
         // 上記のいずれか
         const relicElement = relicElements[index];
+        
+        // relic-itemクラスを持たない場合はスコア0を返す
+        if (!relicElement || !relicElement.classList.contains(SELECTORS.RELIC_ITEM.substring(1))) {
+            return 0;
+        }
+        
         // 聖遺物1つあたりが持つサブステータス要素すべて
         const subPropElements = relicElement.querySelectorAll(SELECTORS.ARTIFACT_SUB_PROP);
         let score = 0;
