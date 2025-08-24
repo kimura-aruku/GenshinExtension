@@ -311,18 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // artifact-info以下のp要素をチェック
         const pElements = artifactInfoElement.querySelectorAll('p');
         
-        // 日本語と英語の「装備なし」メッセージをチェック
-        const noArtifactsMessages = [
-            '聖遺物を装備していません',
-            'No Artifacts equipped'
-        ];
+        // 国際化された「装備なし」メッセージをチェック
+        const noArtifactsMessage = chrome.i18n.getMessage('noArtifactsEquipped');
         
         for (const pElement of pElements) {
             const textContent = pElement.textContent?.trim() || '';
-            for (const message of noArtifactsMessages) {
-                if (textContent.includes(message)) {
-                    return true;
-                }
+            if (textContent.includes(noArtifactsMessage)) {
+                return true;
             }
         }
         

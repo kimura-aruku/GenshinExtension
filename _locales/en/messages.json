@@ -112,5 +112,10 @@
   "calculationMethodLabel": {
     "message": "Calculation Method:",
     "description": "Calculation method selection label on popup screen"
+  },
+
+  "noArtifactsEquipped": {
+    "message": "No Artifacts equipped",
+    "description": "Message when no artifacts are equipped"
   }
 }

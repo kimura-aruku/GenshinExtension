@@ -112,5 +112,10 @@
   "calculationMethodLabel": {
     "message": "スコア計算方式:",
     "description": "popup画面の計算方式選択ラベル"
+  },
+
+  "noArtifactsEquipped": {
+    "message": "聖遺物を装備していません",
+    "description": "聖遺物が装備されていない場合のメッセージ"
   }
 }
