@@ -81,10 +81,19 @@ document.addEventListener('DOMContentLoaded', () => {
          * 要素が見つかるまで待機する
          * @param {string} selector - セレクタ文字列
          * @param {function} additionalCondition - 追加の条件チェック関数（オプション）
-         * @returns {Promise<HTMLElement>} 見つかった要素
+         * @param {function} abortCondition - 中断条件チェック関数（オプション）
+         * @returns {Promise<HTMLElement|null>} 見つかった要素、または中断時はnull
          */
-        waitForElement(selector, additionalCondition = null) {
+        waitForElement(selector, additionalCondition = null, abortCondition = null) {
             return new Promise((resolve, reject) => {
+                // 中断条件チェック
+                const checkAbortCondition = () => {
+                    if (abortCondition && abortCondition()) {
+                        return true;
+                    }
+                    return false;
+                };
+
                 // 要素の条件チェック
                 const checkElement = (element) => {
                     if (!element) return false;
@@ -94,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return true;
                 };
 
+                // 中断条件の初期チェック
+                if (checkAbortCondition()) {
+                    resolve(null);
+                    return;
+                }
+
                 // 既に存在するならそのまま返す
                 const existingElement = document.querySelector(selector);
                 if (checkElement(existingElement)) {
@@ -101,10 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                let timeoutId;
+                
                 const observer = new MutationObserver((mutationsList, observer) => {
+                    // 中断条件チェック
+                    if (checkAbortCondition()) {
+                        observer.disconnect();
+                        clearTimeout(timeoutId);
+                        resolve(null);
+                        return;
+                    }
+                    
                     const element = document.querySelector(selector);
                     if (checkElement(element)) {
                         observer.disconnect();
+                        clearTimeout(timeoutId);
                         resolve(element);
                     }
                 });
@@ -117,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // タイムアウトの設定
-                setTimeout(() => {
+                timeoutId = setTimeout(() => {
                     observer.disconnect();
                     reject(new Error(`Timeout: Element ${selector} not found`));
                 }, EXTENSION_CONFIG.WAIT_TIMEOUT);
@@ -273,6 +299,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!statName) return '';
         // 非改行スペース(&nbsp;)を通常スペースに変換し、前後の空白を除去
         return statName.replace(/\u00A0/g, ' ').trim();
+    }
+
+    // 聖遺物未装備かどうかをチェックする関数
+    function checkNoArtifactsEquipped() {
+        const artifactInfoElement = document.querySelector(SELECTORS.ARTIFACT_INFO);
+        if (!artifactInfoElement) {
+            return false;
+        }
+        
+        // artifact-info以下のp要素をチェック
+        const pElements = artifactInfoElement.querySelectorAll('p');
+        
+        // 日本語と英語の「装備なし」メッセージをチェック
+        const noArtifactsMessages = [
+            '聖遺物を装備していません',
+            'No Artifacts equipped'
+        ];
+        
+        for (const pElement of pElements) {
+            const textContent = pElement.textContent?.trim() || '';
+            for (const message of noArtifactsMessages) {
+                if (textContent.includes(message)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     // 追加ステータスのキャッシュ
@@ -468,7 +522,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function reDraw() {
         // 聖遺物リスト要素の再取得
         if (!isElementVisible(relicListElement)) {
-            relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
+            relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST, null, checkNoArtifactsEquipped);
+            if (!relicListElement) {
+                console.log('No artifacts equipped, skipping score calculation');
+                return; // 処理を終了
+            }
         }
         
         // 追加ステータス要素の再取得
@@ -541,7 +599,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // 聖遺物要素取得
-        relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST);
+        relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST, null, checkNoArtifactsEquipped);
+        if (!relicListElement) {
+            console.log('No artifacts equipped during setup, skipping initialization');
+            return; // 処理を終了
+        }
         const subPropsElement = await observerManager.waitForElement(SELECTORS.SUB_PROPS);
         
         // 項目ラベル用のスタイル取得
@@ -582,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // カスタムイベントリスナー（設定変更時の再描画用）
     document.addEventListener('genshin-method-changed', async (event) => {
-        console.log('Received method change event:', event.detail.method);
         try {
             await draw();
         } catch (error) {
@@ -619,7 +680,6 @@ async function handleCalculationMethodChange(newMethod) {
         });
         document.dispatchEvent(event);
         
-        console.log(`Calculation method changed to: ${newMethod}. Redraw event dispatched.`);
     } catch (error) {
         console.error('Failed to handle calculation method change:', error);
     }

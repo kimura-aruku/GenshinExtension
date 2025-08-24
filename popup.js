@@ -198,20 +198,13 @@ async function notifyContentScript(selectedMethod) {
                     method: selectedMethod
                 });
                 successCount++;
-                console.log(`Notified tab ${tab.id}: ${selectedMethod}`);
             } catch (error) {
                 errorCount++;
                 console.warn(`Failed to notify tab ${tab.id}:`, error.message);
             }
         }
         
-        if (successCount > 0) {
-            console.log(`Successfully notified ${successCount} tab(s) of calculation method change`);
-        }
-        
-        if (errorCount > 0 && successCount === 0) {
-            console.warn(`Failed to notify any tabs. ${errorCount} error(s) occurred.`);
-        }
+        // 通知完了（詳細ログは不要）
         
     } catch (error) {
         console.error('Failed to query tabs or send notifications:', error);
