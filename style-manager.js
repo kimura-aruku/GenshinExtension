@@ -10,10 +10,13 @@ class StyleManager {
             this.styles[type] = {};
         });
         
-        // コピー対象のスタイルプロパティ
-        this.allowedProperties = Object.freeze([
-            'font-size', 'text-align', 'font-family', 'color'
-        ]);
+        // コピー対象のスタイルプロパティ（スタイルタイプ別）
+        this.allowedProperties = Object.freeze({
+            [STYLE_TYPES.NUMBER]: ['font-size', 'text-align', 'font-family', 'color'],
+            [STYLE_TYPES.DESCRIPTION]: ['font-size', 'text-align', 'font-family', 'color'],
+            [STYLE_TYPES.LABEL]: ['font-size', 'text-align', 'font-family', 'color'],
+            [STYLE_TYPES.BUTTON]: ['background-color', 'outline', 'color', 'border', 'text-align', 'font-family', 'font-weight', 'border-radius']
+        });
     }
 
     /**
@@ -30,13 +33,16 @@ class StyleManager {
     /**
      * 要素からスタイルを抽出する
      * @param {HTMLElement} element - スタイル取得元の要素
+     * @param {string} styleType - スタイルタイプ
      * @returns {{ [key: string]: string }} スタイルオブジェクト
      */
-    extractStyles(element) {
+    extractStyles(element, styleType) {
         const computedStyle = window.getComputedStyle(element);
         const styles = {};
         
-        for (const property of this.allowedProperties) {
+        const properties = this.allowedProperties[styleType] || this.allowedProperties[STYLE_TYPES.LABEL];
+        
+        for (const property of properties) {
             styles[property] = computedStyle.getPropertyValue(property);
         }
         
@@ -50,8 +56,9 @@ class StyleManager {
      */
     setStyle(styleType, element) {
         this.validateStyleType(styleType);
-        this.styles[styleType] = this.extractStyles(element);
+        this.styles[styleType] = this.extractStyles(element, styleType);
     }
+
 
     /**
      * 汎用スタイル適用メソッド

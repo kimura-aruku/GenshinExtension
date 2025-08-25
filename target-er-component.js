@@ -231,7 +231,7 @@ class TargetERComponent {
         // 保存ボタンのスタイル適用
         const saveButton = targetERElement.querySelector('.target-er-save-button');
         if (saveButton) {
-            styleManager.applyStyle(STYLE_TYPES.LABEL, saveButton);
+            styleManager.applyStyle(STYLE_TYPES.BUTTON, saveButton);
         }
     }
     

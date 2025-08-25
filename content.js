@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 言語選択関連
         LANGUAGE_SELECTOR: '.mhy-hoyolab-lang-selector__current-lang',
         
+        // ボタン関連
+        GT_BUTTON: '.gt-button-ys',
+        
         // その他
         SPLIT: '.split'
     });
@@ -788,6 +791,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 数値用スタイル取得
         const finalTextElement = await observerManager.waitForElement(SELECTORS.FINAL_TEXT);
         styleManager.setStyle(STYLE_TYPES.NUMBER, finalTextElement);
+
+        // ボタンスタイルを.gt-button-ysから取得
+        const gtButtonElement = await observerManager.waitForElement(SELECTORS.GT_BUTTON);
+        styleManager.setStyle(STYLE_TYPES.BUTTON, gtButtonElement);
 
         // キャラ情報要素取得
         basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);

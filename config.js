@@ -133,7 +133,8 @@ function updateCalculationMethod(newMethod) {
 const STYLE_TYPES = Object.freeze({
     NUMBER: 'number',
     DESCRIPTION: 'description',
-    LABEL: 'label'
+    LABEL: 'label',
+    BUTTON: 'button'
 });
 
 // Chrome拡張の設定
