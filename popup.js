@@ -11,7 +11,7 @@ function getMessages() {
     const lang = navigator.language.split('-')[0]; // "en-US" → "en"
     const messages = {
         ja: {
-            calculationMethodLabel: 'スコア計算方式:',
+            calculationMethodLabel: 'スコア計算方式',
             scoreMethodStrictName: '厳密型',
             scoreMethodPopularName: '普及型',
             scoreMethodDescription: 'スコア = ステータス値 × スコア係数',
@@ -24,10 +24,17 @@ function getMessages() {
             defPercent: '防御力%',
             elementalMastery: '元素熟知',
             energyRecharge: '元素チャージ効率',
-            targetEnergyRechargeDisplay: '目標チャージ効率 表示'
+            targetEnergyRechargeDisplay: '目標チャージ効率 表示',
+            targetEnergyRechargeDescriptionHeader: '目標チャージ効率 表示をオンにした場合、以下のようにスコアが算出されます。',
+            subtotalScoreLabel: '小計スコア',
+            subtotalScoreDescription: '元々の合計スコア',
+            excessScoreLabel: '超過スコア',
+            excessScoreDescription: '目標チャージ効率を超過した元素チャージ効率のスコア',
+            totalScoreLabel: '合計スコア',
+            totalScoreDescription: '小計スコア - 超過スコア'
         },
         en: {
-            calculationMethodLabel: 'Calculation Method:',
+            calculationMethodLabel: 'Calculation Method',
             scoreMethodStrictName: 'Strict',
             scoreMethodPopularName: 'Popular',
             scoreMethodDescription: 'Score = Stat Value × Score Coefficient',
@@ -40,7 +47,14 @@ function getMessages() {
             defPercent: 'DEF%',
             elementalMastery: 'Elemental Mastery',
             energyRecharge: 'Energy Recharge',
-            targetEnergyRechargeDisplay: 'Target Energy Recharge Display'
+            targetEnergyRechargeDisplay: 'Target Energy Recharge Display',
+            targetEnergyRechargeDescriptionHeader: 'When Target Energy Recharge Display is enabled, scores are calculated as follows:',
+            subtotalScoreLabel: 'Subtotal Score',
+            subtotalScoreDescription: 'Original total score',
+            excessScoreLabel: 'Excess Score',
+            excessScoreDescription: 'Energy Recharge score exceeding target',
+            totalScoreLabel: 'Total Score',
+            totalScoreDescription: 'Subtotal Score - Excess Score'
         }
     };
     return messages[lang] || messages['ja']; // フォールバック
@@ -375,10 +389,10 @@ function updateToggleState(isActive) {
 async function loadTargetERDisplaySetting() {
     try {
         const result = await chrome.storage.local.get(TARGET_ER_DISPLAY_KEY);
-        return result[TARGET_ER_DISPLAY_KEY] !== undefined ? result[TARGET_ER_DISPLAY_KEY] : true; // デフォルトはオン
+        return result[TARGET_ER_DISPLAY_KEY] !== undefined ? result[TARGET_ER_DISPLAY_KEY] : false; // デフォルトはオフ
     } catch (error) {
         console.error('Failed to load target ER display setting:', error);
-        return true; // デフォルト値
+        return false; // デフォルト値
     }
 }
 

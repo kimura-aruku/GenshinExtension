@@ -25,8 +25,11 @@
             margin: 0;
         }
         
-        .section {
+        .score-method-section {
             margin-bottom: 16px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
         }
         
         .label {
@@ -89,7 +92,9 @@
         .toggle-container {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
+            margin-bottom: 4px;
         }
         
         .toggle-switch {
@@ -127,6 +132,40 @@
             color: #333;
             cursor: pointer;
         }
+        
+        .toggle-description {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.3;
+            margin-top: 8px;
+        }
+        
+        .description-header {
+            font-size: 9px;
+            margin-bottom: 6px;
+        }
+        
+        .score-definition {
+            display: flex;
+            margin-bottom: 2px;
+            padding: 3px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .score-definition-first {
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .score-label {
+            font-weight: 500;
+            color: #666;
+            flex-shrink: 0;
+        }
+        
+        .score-description {
+            margin-left: 8px;
+            white-space: pre-line;
+        }
     </style>
 </head>
 <body>
@@ -134,7 +173,7 @@
         <h1 class="title" data-i18n="extensionName">原神スコア計算機</h1>
     </div>
     
-    <div class="section">
+    <div class="score-method-section">
         <label for="calculationMethod" class="label" data-i18n="calculationMethodLabel">スコア計算方式:</label>
         <select id="calculationMethod">
             <!-- オプションは JavaScript で動的に生成 -->
@@ -146,10 +185,27 @@
     
     <div class="toggle-section">
         <div class="toggle-container">
-            <div id="targetEnergyRechargeToggle" class="toggle-switch active">
+            <span class="toggle-label" data-i18n="targetEnergyRechargeDisplay">目標チャージ効率 表示</span>
+            <div id="targetEnergyRechargeToggle" class="toggle-switch">
                 <div class="toggle-slider"></div>
             </div>
-            <span class="toggle-label" data-i18n="targetEnergyRechargeDisplay">目標チャージ効率 表示</span>
+        </div>
+        <div class="toggle-description">
+            <div class="description-header" data-i18n="targetEnergyRechargeDescriptionHeader">
+                目標チャージ効率 表示をオンにした場合、以下のようにスコアが算出されます。
+            </div>
+            <div class="score-definition score-definition-first">
+                <span class="score-label" data-i18n="subtotalScoreLabel">小計スコア</span>
+                <span class="score-description" data-i18n="subtotalScoreDescription">元々の合計スコア</span>
+            </div>
+            <div class="score-definition">
+                <span class="score-label" data-i18n="excessScoreLabel">超過スコア</span>
+                <span class="score-description" data-i18n="excessScoreDescription">目標チャージ効率を超過した元素チャージ効率のスコア</span>
+            </div>
+            <div class="score-definition">
+                <span class="score-label" data-i18n="totalScoreLabel">合計スコア</span>
+                <span class="score-description" data-i18n="totalScoreDescription">小計スコア - 超過スコア</span>
+            </div>
         </div>
     </div>
     

@@ -99,7 +99,7 @@ async function loadCalculationMethod() {
 async function loadTargetERDisplaySetting() {
     try {
         const result = await chrome.storage.local.get('targetEnergyRechargeDisplay');
-        const isEnabled = result.targetEnergyRechargeDisplay !== undefined ? result.targetEnergyRechargeDisplay : true; // デフォルトはオン
+        const isEnabled = result.targetEnergyRechargeDisplay !== undefined ? result.targetEnergyRechargeDisplay : false; // デフォルトはオフ
         
         // targetERComponentが利用可能であれば設定を適用
         if (typeof targetERComponent !== 'undefined') {
@@ -107,9 +107,9 @@ async function loadTargetERDisplaySetting() {
         }
     } catch (error) {
         console.warn('Failed to load target ER display setting from storage:', error);
-        // エラーの場合はデフォルト設定（オン）を使用
+        // エラーの場合はデフォルト設定（オフ）を使用
         if (typeof targetERComponent !== 'undefined') {
-            targetERComponent.setEnabled(true);
+            targetERComponent.setEnabled(false);
         }
     }
 }
