@@ -31,7 +31,10 @@ function getMessages() {
             excessScoreLabel: '超過スコア',
             excessScoreDescription: '目標チャージ効率を超過した元素チャージ効率のスコア',
             totalScoreLabel: '合計スコア',
-            totalScoreDescription: '小計スコア - 超過スコア'
+            totalScoreDescription: '小計スコア - 超過スコア',
+            statusSaved: '設定を保存しました',
+            statusSaveError: '設定の保存に失敗しました',
+            statusInitError: '初期化に失敗しました'
         },
         en: {
             calculationMethodLabel: 'Calculation Method',
@@ -54,7 +57,10 @@ function getMessages() {
             excessScoreLabel: 'Excess Score',
             excessScoreDescription: 'Energy Recharge score exceeding target',
             totalScoreLabel: 'Total Score',
-            totalScoreDescription: 'Subtotal Score - Excess Score'
+            totalScoreDescription: 'Subtotal Score - Excess Score',
+            statusSaved: 'Settings saved successfully',
+            statusSaveError: 'Failed to save settings',
+            statusInitError: 'Failed to initialize'
         }
     };
     return messages[lang] || messages['ja']; // フォールバック
@@ -129,7 +135,7 @@ async function initializeUI() {
         
     } catch (error) {
         console.error('Failed to initialize popup UI:', error);
-        showStatus('初期化に失敗しました', 'error');
+        showStatus('statusInitError', 'error');
     }
 }
 
@@ -249,14 +255,14 @@ async function handleMethodChange(event) {
         updateDescription(selectedMethod);
         
         // 成功メッセージを表示
-        showStatus('設定を保存しました', 'success');
+        showStatus('statusSaved', 'success');
         
         // content script に変更を通知
         await notifyContentScript(selectedMethod);
         
     } catch (error) {
         console.error('Failed to save calculation method:', error);
-        showStatus('設定の保存に失敗しました', 'error');
+        showStatus('statusSaveError', 'error');
     }
 }
 
@@ -276,15 +282,24 @@ function updateDescription(methodKey) {
 /**
  * ステータスメッセージの表示
  */
-function showStatus(message, type) {
-    statusDiv.textContent = message;
-    statusDiv.className = `status ${type}`;
-    statusDiv.style.display = 'block';
+function showStatus(messageKey, type) {
+    const messages = getMessages();
+    const message = messages[messageKey] || messageKey; // フォールバック
     
-    // 3秒後に非表示
+    // 既存のメッセージがある場合は一旦非表示にする
+    statusDiv.style.display = 'none';
+    
+    // 少し遅延してから新しいメッセージを表示
     setTimeout(() => {
-        statusDiv.style.display = 'none';
-    }, 3000);
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type}`;
+        statusDiv.style.display = 'block';
+        
+        // 3秒後に非表示
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 3000);
+    }, 50);
 }
 
 /**
@@ -366,9 +381,12 @@ async function handleToggleChange() {
         // content scriptに通知
         await notifyTargetERDisplayChange(newState);
         
+        // 成功メッセージを表示
+        showStatus('statusSaved', 'success');
+        
     } catch (error) {
         console.error('Failed to save toggle setting:', error);
-        showStatus('設定の保存に失敗しました', 'error');
+        showStatus('statusSaveError', 'error');
     }
 }
 
