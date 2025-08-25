@@ -2,6 +2,130 @@ document.addEventListener('DOMContentLoaded', () => {
     // Chrome拡張の要素ID（config.jsから取得）
     const MY_ID = EXTENSION_CONFIG.ELEMENT_ID;
     
+    // デバッグ・ログ機能の設定
+    const DEBUG_MODE = false; // デバッグモード（本番時はfalseに変更）
+    let navigationEventLog = [];
+    let maxLogEntries = 100; // 最大ログエントリ数を増加
+    
+    // セッションID（ページロード時に生成される共通ID）
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    let eventCounter = 0; // イベント固有ID用のカウンタ
+    
+    // 重複実行防止用のフラグ
+    let pendingDelayedCheck = false;
+    let pendingFinalCheck = false;
+    
+    // ナビゲーションイベントログ関数
+    function logNavigationEvent(eventType, details) {
+        eventCounter++;
+        const timestamp = new Date().toISOString();
+        const eventId = `event_${eventCounter.toString().padStart(4, '0')}`;
+        
+        // isArtifactPage()の呼び出しを避けて循環参照を防ぐ
+        let artifactPageStatus = false;
+        try {
+            // 直接URL判定のみを行う（DOM判定は行わない）
+            const url = window.location.href;
+            artifactPageStatus = url.includes('/ys/role/all?role_id=') && url.includes('&server=');
+        } catch (error) {
+            artifactPageStatus = false;
+        }
+        
+        const logEntry = {
+            sessionId,        // セッション共通ID
+            eventId,         // イベント固有ID
+            timestamp,
+            eventType,
+            details,
+            url: window.location.href,
+            isArtifactPage: artifactPageStatus,
+            isInitialized: isInitialized,
+            sequenceNumber: eventCounter // シーケンス番号
+        };
+        
+        navigationEventLog.push(logEntry);
+        
+        // ログサイズ制限
+        if (navigationEventLog.length > maxLogEntries) {
+            navigationEventLog.shift();
+        }
+        
+        if (DEBUG_MODE) {
+            // コンソールフィルタ用のシンプルなフォーマット
+            console.log(`GENSHIN_${eventType} ${eventId}:`, details);
+        }
+    }
+    
+    // ナビゲーションログをダンプする関数（デバッグ用）
+    window.dumpNavigationLog = function(eventTypeFilter = null) {
+        let filteredLog = navigationEventLog;
+        
+        if (eventTypeFilter) {
+            filteredLog = navigationEventLog.filter(entry => 
+                entry.eventType.includes(eventTypeFilter)
+            );
+            console.log(`[GENSHIN] フィルタ適用: ${eventTypeFilter} (${filteredLog.length}件)`);
+        } else {
+            console.log(`[GENSHIN] 全ログ表示 (${filteredLog.length}件)`);
+        }
+        
+        console.table(filteredLog);
+        return filteredLog;
+    };
+    
+    // セッションIDでログをフィルタ
+    window.filterLogBySession = function(targetSessionId = null) {
+        const target = targetSessionId || sessionId;
+        const filtered = navigationEventLog.filter(entry => entry.sessionId === target);
+        console.log(`[GENSHIN] セッションIDフィルタ: ${target} (${filtered.length}件)`);
+        console.table(filtered);
+        return filtered;
+    };
+    
+    // イベントタイプでログをフィルタ
+    window.filterLogByEventType = function(eventTypes) {
+        const types = Array.isArray(eventTypes) ? eventTypes : [eventTypes];
+        const filtered = navigationEventLog.filter(entry => 
+            types.some(type => entry.eventType.includes(type))
+        );
+        console.log(`[GENSHIN] イベントタイプフィルタ: ${types.join(', ')} (${filtered.length}件)`);
+        console.table(filtered);
+        return filtered;
+    };
+    
+    // 時系列でログを表示（最新N件）
+    window.getRecentLogs = function(count = 10) {
+        const recent = navigationEventLog.slice(-count);
+        console.log(`[GENSHIN] 最新${count}件のログ:`);
+        console.table(recent);
+        return recent;
+    };
+    
+    // popstate関連のログのみ表示
+    window.getPopstateLogs = function() {
+        return window.filterLogByEventType(['POPSTATE']);
+    };
+    
+    // 現在の状態をダンプする関数（デバッグ用）
+    window.dumpCurrentState = function() {
+        const state = {
+            sessionId,
+            currentEventId: `event_${eventCounter.toString().padStart(4, '0')}`,
+            isInitialized,
+            isDrawing,
+            isNavigationIntensive,
+            currentUrl: window.location.href,
+            isArtifactPage: isArtifactPage(),
+            hasRelicList: !!document.querySelector(SELECTORS.RELIC_LIST),
+            hasSubProps: !!document.querySelector(SELECTORS.SUB_PROPS_PROP_LIST),
+            hasBasicInfo: !!document.querySelector(SELECTORS.BASIC_INFO),
+            scoreElementExists: !!document.getElementById(MY_ID),
+            totalEvents: eventCounter
+        };
+        console.log('[GENSHIN] 現在の状態:', state);
+        return state;
+    };
+    
     // オリジナルページの要素セレクタ（クラス名変更時はここを修正）
     const SELECTORS = Object.freeze({
         // 基本情報・ステータス関連
@@ -72,6 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.basicInfoObserver = null;
             // 言語選択要素の監視オブジェクト
             this.languageObserver = null;
+            // SPA遷移検知用の全体監視オブジェクト
+            this.bodyObserver = null;
             
             // 監視設定
             this.observerConfig = Object.freeze({
@@ -81,6 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 characterData: true,
                 characterDataOldValue: false,
                 attributeOldValue: false,
+            });
+            
+            // SPA遷移検知用の設定
+            this.bodyObserverConfig = Object.freeze({
+                childList: true,
+                subtree: true,
+                characterData: false,
+                attributes: false
             });
         }
 
@@ -273,10 +407,105 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.basicInfoObserver.observe(basicInfoElement, this.observerConfig);
             }
         }
+
+        /**
+         * SPA遷移検知のためのbody監視を開始
+         * @param {function} onSPANavigation - SPA遷移検知時のコールバック
+         */
+        startBodyObserving(onSPANavigation) {
+            if (this.bodyObserver) {
+                this.bodyObserver.disconnect();
+            }
+            
+            this.bodyObserver = new MutationObserver((mutations) => {
+                // より感度の高いSPA遷移検知
+                let significantChange = false;
+                
+                for (let mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                        // より緩い条件で検知（感度向上）
+                        if (mutation.addedNodes.length > 1 || mutation.removedNodes.length > 1) {
+                            // 大きな要素の変更をチェック
+                            for (let node of [...mutation.addedNodes, ...mutation.removedNodes]) {
+                                if (node.nodeType === Node.ELEMENT_NODE) {
+                                    // より小さな変更でも検知（子要素5個以上）
+                                    if (node.children.length > 5 || 
+                                        // 特定のクラスを持つ要素の変更
+                                        node.classList?.contains('content') ||
+                                        node.classList?.contains('main') ||
+                                        node.classList?.contains('page') ||
+                                        // 聖遺物関連の要素の変更を特に監視
+                                        node.querySelector?.('.relic-list') ||
+                                        node.querySelector?.('.artifact-info') ||
+                                        node.querySelector?.('.sub-props')) {
+                                        significantChange = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 聖遺物関連要素の直接的な変更も検知
+                        if (mutation.target.classList?.contains('artifact-info') ||
+                            mutation.target.closest?.('.artifact-info')) {
+                            significantChange = true;
+                        }
+                    }
+                    
+                    if (significantChange) break;
+                }
+                
+                if (significantChange) {
+                    // より短いデバウンス（50ms）で素早く反応
+                    clearTimeout(this.spaNavigationTimeout);
+                    this.spaNavigationTimeout = setTimeout(() => {
+                        onSPANavigation();
+                    }, 50);
+                }
+            });
+            
+            this.bodyObserver.observe(document.body, this.bodyObserverConfig);
+        }
+
+        /**
+         * 全ての監視を停止
+         */
+        stopAllObserving() {
+            if (this.subPropsObserver) {
+                this.subPropsObserver.disconnect();
+                this.subPropsObserver = null;
+            }
+            if (this.basicInfoObserver) {
+                this.basicInfoObserver.disconnect();
+                this.basicInfoObserver = null;
+            }
+            if (this.languageObserver) {
+                this.languageObserver.disconnect();
+                this.languageObserver = null;
+            }
+            if (this.bodyObserver) {
+                this.bodyObserver.disconnect();
+                this.bodyObserver = null;
+            }
+            if (this.spaNavigationTimeout) {
+                clearTimeout(this.spaNavigationTimeout);
+                this.spaNavigationTimeout = null;
+            }
+        }
     }
 
     // 監視管理インスタンス
     const observerManager = new ObserverManager();
+
+    // SPA遷移・状態管理
+    let isInitialized = false;
+    let periodicCheckInterval = null;
+    let navigationCheckInterval = null;
+    let lastKnownState = {
+        hasRelicList: false,
+        hasSubProps: false,
+        hasBasicInfo: false
+    };
 
     // 要素が画面に表示されている
     function isElementVisible(element) {
@@ -306,6 +535,267 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!text) return '';
         // 非改行スペース(&nbsp;)を通常スペースに変換し、前後の空白を除去
         return text.replace(/\u00A0/g, ' ').trim();
+    }
+
+    // 現在のページが聖遺物ページかどうかを判定
+    function isArtifactPage() {
+        // URLによる判定（DOM読み込み前でも判定可能）
+        const url = window.location.href;
+        const isArtifactUrl = url.includes('/ys/role/all?role_id=') && url.includes('&server=');
+        
+        // DOM要素による判定
+        const hasArtifactInfo = document.querySelector(SELECTORS.ARTIFACT_INFO) !== null;
+        const hasRelicList = document.querySelector(SELECTORS.RELIC_LIST) !== null;
+        const hasSubProps = document.querySelector(SELECTORS.SUB_PROPS) !== null;
+        const hasDomElements = hasArtifactInfo || hasRelicList || hasSubProps;
+        
+        // URLまたはDOM要素のいずれかで判定
+        const result = isArtifactUrl || hasDomElements;
+        
+        return result;
+    }
+
+    // 現在のページ状態を取得
+    function getCurrentPageState() {
+        return {
+            hasRelicList: document.querySelector(SELECTORS.RELIC_LIST) !== null,
+            hasSubProps: document.querySelector(SELECTORS.SUB_PROPS) !== null,
+            hasBasicInfo: document.querySelector(SELECTORS.BASIC_INFO) !== null,
+            isArtifactPage: isArtifactPage()
+        };
+    }
+
+    // ページ状態の変化をチェック
+    function hasPageStateChanged(currentState) {
+        return (
+            currentState.hasRelicList !== lastKnownState.hasRelicList ||
+            currentState.hasSubProps !== lastKnownState.hasSubProps ||
+            currentState.hasBasicInfo !== lastKnownState.hasBasicInfo
+        );
+    }
+
+    // HoYoLABのナビゲーションボタンを監視
+    function startNavigationButtonMonitoring() {
+        // HoYoLABで使用される可能性のあるボタンセレクタ
+        const buttonSelectors = [
+            'button', // 一般的なボタン
+            'a[href]', // リンク
+            '[role="button"]', // ロール指定のボタン
+            '.btn', // ボタンクラス
+            '.button', // ボタンクラス
+            '.nav-item', // ナビゲーション項目
+            '.tab-item', // タブ項目
+            '*[onclick]' // onclick属性のある要素
+        ];
+        
+        // ドキュメント全体でクリックイベントを監視（イベント委譲）
+        document.addEventListener('click', (event) => {
+            const target = event.target.closest(buttonSelectors.join(','));
+            if (target) {
+                // ナビゲーション関連のボタンがクリックされた場合
+                console.log('Navigation button clicked, starting intensive monitoring');
+                startIntensiveStateCheck();
+            }
+        }, true); // キャプチャフェーズで監視
+    }
+
+    // クリック後の集中的な状態チェック（短期間）
+    function startIntensiveStateCheck() {
+        if (navigationCheckInterval) {
+            clearInterval(navigationCheckInterval);
+        }
+        
+        let checkCount = 0;
+        const maxChecks = 20; // 最大10秒間（500ms × 20回）
+        
+        navigationCheckInterval = setInterval(async () => {
+            try {
+                checkCount++;
+                const currentState = getCurrentPageState();
+                
+                // 聖遺物ページから離脱した場合
+                if (!currentState.isArtifactPage && isInitialized) {
+                    console.log('Left artifact page after navigation, cleaning up...');
+                    cleanup();
+                    clearInterval(navigationCheckInterval);
+                    navigationCheckInterval = null;
+                    return;
+                }
+                
+                // 聖遺物ページに戻った/状態が変化した場合
+                if (currentState.isArtifactPage && (!isInitialized || hasPageStateChanged(currentState))) {
+                    console.log('Artifact page detected after navigation, reinitializing...');
+                    await reinitialize();
+                    clearInterval(navigationCheckInterval);
+                    navigationCheckInterval = null;
+                    return;
+                }
+                
+                // 最大チェック回数に達した場合は停止
+                if (checkCount >= maxChecks) {
+                    clearInterval(navigationCheckInterval);
+                    navigationCheckInterval = null;
+                }
+                
+                lastKnownState = currentState;
+            } catch (error) {
+                console.error('Error in intensive navigation check:', error);
+            }
+        }, 500); // 500ms間隔で高速チェック
+    }
+
+    // 定期的な要素存在チェック
+    // ナビゲーション検知用の状態変数
+    let isNavigationIntensive = false;
+    let navigationIntensiveTimeout = null;
+    
+    function startPeriodicCheck() {
+        if (periodicCheckInterval) {
+            clearInterval(periodicCheckInterval);
+        }
+        
+        periodicCheckInterval = setInterval(async () => {
+            try {
+                const currentState = getCurrentPageState();
+                
+                // 聖遺物ページから離脱した場合
+                if (!currentState.isArtifactPage && isInitialized) {
+                    console.log('Left artifact page, cleaning up...');
+                    cleanup();
+                    return;
+                }
+                
+                // 聖遺物ページに戻った/状態が変化した場合
+                if (currentState.isArtifactPage && (!isInitialized || hasPageStateChanged(currentState))) {
+                    console.log('Artifact page detected or state changed, reinitializing...');
+                    await reinitialize();
+                }
+                
+                lastKnownState = currentState;
+            } catch (error) {
+                console.error('Error in periodic check:', error);
+            }
+        }, isNavigationIntensive ? 100 : 3000); // ナビゲーション中は100ms、通常は3秒
+    }
+    
+    // ナビゲーション集中モードを開始（高頻度チェック）
+    function startNavigationIntensiveMode() {
+        logNavigationEvent('NAVIGATION_INTENSIVE_START', 'Starting intensive monitoring mode');
+        isNavigationIntensive = true;
+        
+        // 既存のタイマーをクリアして新しい間隔で再開
+        startPeriodicCheck();
+        
+        // 5秒後にナビゲーション集中モードを終了
+        if (navigationIntensiveTimeout) {
+            clearTimeout(navigationIntensiveTimeout);
+        }
+        
+        navigationIntensiveTimeout = setTimeout(() => {
+            logNavigationEvent('NAVIGATION_INTENSIVE_END', 'Ending intensive monitoring mode');
+            isNavigationIntensive = false;
+            startPeriodicCheck(); // 通常間隔に戻す
+        }, 5000);
+    }
+
+    // SPA遷移検知時のハンドラ
+    async function handleSPANavigation() {
+        logNavigationEvent('SPA_NAVIGATION_DETECTED', 'SPA navigation handler called');
+        
+        // ナビゲーション集中モードを開始
+        startNavigationIntensiveMode();
+        
+        try {
+            const currentState = getCurrentPageState();
+            
+            if (currentState.isArtifactPage) {
+                // 聖遺物ページに遷移した場合は再初期化
+                logNavigationEvent('REINITIALIZE', '聖遺物ページで再初期化');
+                await reinitialize();
+            } else {
+                // 他のページに遷移した場合はクリーンアップ
+                logNavigationEvent('CLEANUP', '非聖遺物ページでクリーンアップ');
+                cleanup();
+                
+                // DOM読み込み待ちのため遅延再チェックを実行（重複防止）
+                if (!pendingDelayedCheck) {
+                    pendingDelayedCheck = true;
+                    setTimeout(async () => {
+                        const delayedState = getCurrentPageState();
+                        if (delayedState.isArtifactPage && !isInitialized) {
+                            logNavigationEvent('DELAYED_REINITIALIZE', '遅延チェックで聖遺物ページを検知、再初期化');
+                            await reinitialize();
+                        } else if (delayedState.isArtifactPage && isInitialized) {
+                            logNavigationEvent('DELAYED_SKIP', '既に初期化済みのためスキップ');
+                        }
+                        pendingDelayedCheck = false;
+                    }, 100);
+                }
+                
+                // さらに確実にするため500ms後にも再チェック（重複防止）
+                if (!pendingFinalCheck) {
+                    pendingFinalCheck = true;
+                    setTimeout(async () => {
+                        const finalState = getCurrentPageState();
+                        if (finalState.isArtifactPage && !isInitialized) {
+                            logNavigationEvent('FINAL_REINITIALIZE', '最終チェックで聖遺物ページを検知、再初期化');
+                            await reinitialize();
+                        } else if (finalState.isArtifactPage && isInitialized) {
+                            logNavigationEvent('FINAL_SKIP', '既に初期化済みのためスキップ');
+                        }
+                        pendingFinalCheck = false;
+                    }, 500);
+                }
+            }
+        } catch (error) {
+            logNavigationEvent('SPA_NAVIGATION_ERROR', error.message);
+        }
+    }
+
+    // クリーンアップ処理
+    function cleanup() {
+        // スコア表示要素を削除
+        const existingElement = document.getElementById(MY_ID);
+        if (existingElement) {
+            existingElement.remove();
+        }
+        
+        // 目標ER要素を削除
+        targetERComponent.hideTargetERInput();
+        
+        // 監視を停止
+        observerManager.stopAllObserving();
+        
+        // 定期チェックを停止
+        if (periodicCheckInterval) {
+            clearInterval(periodicCheckInterval);
+            periodicCheckInterval = null;
+        }
+        
+        // ナビゲーションチェックを停止
+        if (navigationCheckInterval) {
+            clearInterval(navigationCheckInterval);
+            navigationCheckInterval = null;
+        }
+        
+        isInitialized = false;
+    }
+
+    // 再初期化処理
+    async function reinitialize() {
+        console.log('Reinitializing extension...');
+        
+        // 既存の要素をクリーンアップ
+        cleanup();
+        
+        // 短い遅延後に初期化を試行
+        setTimeout(async () => {
+            try {
+                await firstDraw();
+            } catch (error) {
+                console.error('Failed to reinitialize:', error);
+            }
+        }, 500);
     }
 
     // 聖遺物未装備かどうかをチェックする関数
@@ -807,8 +1297,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await setup();
             await draw();
+            isInitialized = true;
+            
+            // 初期化完了後の状態を記録
+            lastKnownState = getCurrentPageState();
         } catch (error) {
             console.error(pageLocaleManager.getMessage('errorGeneral'), error);
+            isInitialized = false;
         }
     }
 
@@ -885,5 +1380,133 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // SPA遷移対応のイベントリスナー設定
+    
+    // 強化されたpopstate検知（複数の優先度とタイミングで検知）
+    
+    // 高優先度popstateリスナー（capture phase, 即座に反応）
+    window.addEventListener('popstate', async () => {
+        logNavigationEvent('POPSTATE_HIGH_PRIORITY', 'Capture phase popstate detected');
+        await handleSPANavigation();
+    }, { capture: true, passive: false });
+    
+    // 標準popstateリスナー（bubble phase, 通常の反応）
+    window.addEventListener('popstate', async () => {
+        logNavigationEvent('POPSTATE_STANDARD', 'Bubble phase popstate detected');
+        await handleSPANavigation();
+    }, { passive: false });
+    
+    // 遅延popstateリスナー（他の処理完了後に確実に実行）
+    window.addEventListener('popstate', async () => {
+        logNavigationEvent('POPSTATE_DELAYED', 'Delayed popstate detected, scheduling checks');
+        
+        // 50ms後に実行（HoYoLABの処理完了を待つ）
+        setTimeout(async () => {
+            logNavigationEvent('POPSTATE_DELAYED_50MS', 'Executing delayed 50ms check');
+            await handleSPANavigation();
+        }, 50);
+        
+        // 200ms後にも実行（確実性を高める）
+        setTimeout(async () => {
+            logNavigationEvent('POPSTATE_DELAYED_200MS', 'Executing delayed 200ms check');
+            await handleSPANavigation();
+        }, 200);
+    });
+    
+    // 追加のナビゲーション検知イベント
+    
+    // hashchange イベント（URLハッシュ変更）
+    window.addEventListener('hashchange', async (event) => {
+        logNavigationEvent('HASHCHANGE', { oldURL: event.oldURL, newURL: event.newURL });
+        await handleSPANavigation();
+    });
+    
+    // beforeunload イベント（ページ離脱直前）
+    window.addEventListener('beforeunload', () => {
+        logNavigationEvent('BEFOREUNLOAD', 'Page about to be unloaded');
+        cleanup();
+    });
+    
+    // pagehide イベント（ページが非表示になる時）
+    window.addEventListener('pagehide', () => {
+        logNavigationEvent('PAGEHIDE', 'Page hidden');
+        cleanup();
+    });
+    
+    // visibilitychange イベント（タブの表示/非表示切り替え）
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible') {
+            logNavigationEvent('VISIBILITY_VISIBLE', 'Page became visible');
+            if (!isInitialized && isArtifactPage()) {
+                await reinitialize();
+            }
+        } else {
+            logNavigationEvent('VISIBILITY_HIDDEN', 'Page became hidden');
+        }
+    });
+    
+    // DOMContentLoaded の再発火検知（SPA特有）
+    document.addEventListener('DOMContentLoaded', async () => {
+        logNavigationEvent('DOMCONTENTLOADED', 'DOM content loaded event fired');
+        if (!isInitialized && isArtifactPage()) {
+            await reinitialize();
+        }
+    });
+    
+    // History API 監視（pushState/replaceState のオーバーライド）
+    (function() {
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(state, title, url) {
+            logNavigationEvent('PUSHSTATE', { state, title, url });
+            const result = originalPushState.apply(this, arguments);
+            
+            // pushState後に遅延実行でSPA遷移処理
+            setTimeout(async () => {
+                logNavigationEvent('PUSHSTATE_DELAYED', 'Executing delayed navigation check');
+                await handleSPANavigation();
+            }, 100);
+            
+            return result;
+        };
+        
+        history.replaceState = function(state, title, url) {
+            logNavigationEvent('REPLACESTATE', { state, title, url });
+            const result = originalReplaceState.apply(this, arguments);
+            
+            // replaceState後に遅延実行でSPA遷移処理
+            setTimeout(async () => {
+                logNavigationEvent('REPLACESTATE_DELAYED', 'Executing delayed navigation check');
+                await handleSPANavigation();
+            }, 100);
+            
+            return result;
+        };
+        
+        logNavigationEvent('HISTORY_API_INIT', 'History API monitoring initialized');
+    })();
+    
+    // フォーカス復帰時のチェック（他タブから戻った時など）
+    window.addEventListener('focus', async () => {
+        if (isInitialized && !isArtifactPage()) {
+            console.log('Focus returned but not on artifact page, cleaning up');
+            cleanup();
+        } else if (!isInitialized && isArtifactPage()) {
+            console.log('Focus returned to artifact page, reinitializing');
+            await reinitialize();
+        }
+    });
+    
+    // SPA遷移検知のためのbody監視を開始
+    observerManager.startBodyObserving(handleSPANavigation);
+    
+    // ナビゲーションボタンの監視を開始
+    startNavigationButtonMonitoring();
+    
+    // 定期チェックを開始
+    startPeriodicCheck();
+
+    // 最初に実行
     firstDraw();
 });
