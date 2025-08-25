@@ -4,11 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // デバッグ・ログ機能の設定
     const DEBUG_MODE = false; // デバッグモード（本番時はfalseに変更）
-    let navigationEventLog = [];
-    let maxLogEntries = 100; // 最大ログエントリ数を増加
-    
-    // セッションID（ページロード時に生成される共通ID）
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     let eventCounter = 0; // イベント固有ID用のカウンタ
     
     // 重複実行防止用のフラグ
@@ -17,114 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ナビゲーションイベントログ関数
     function logNavigationEvent(eventType, details) {
-        eventCounter++;
-        const timestamp = new Date().toISOString();
-        const eventId = `event_${eventCounter.toString().padStart(4, '0')}`;
-        
-        // isArtifactPage()の呼び出しを避けて循環参照を防ぐ
-        let artifactPageStatus = false;
-        try {
-            // 直接URL判定のみを行う（DOM判定は行わない）
-            const url = window.location.href;
-            artifactPageStatus = url.includes('/ys/role/all?role_id=') && url.includes('&server=');
-        } catch (error) {
-            artifactPageStatus = false;
-        }
-        
-        const logEntry = {
-            sessionId,        // セッション共通ID
-            eventId,         // イベント固有ID
-            timestamp,
-            eventType,
-            details,
-            url: window.location.href,
-            isArtifactPage: artifactPageStatus,
-            isInitialized: isInitialized,
-            sequenceNumber: eventCounter // シーケンス番号
-        };
-        
-        navigationEventLog.push(logEntry);
-        
-        // ログサイズ制限
-        if (navigationEventLog.length > maxLogEntries) {
-            navigationEventLog.shift();
-        }
-        
         if (DEBUG_MODE) {
+            eventCounter++;
+            const eventId = `event_${eventCounter.toString().padStart(4, '0')}`;
             // コンソールフィルタ用のシンプルなフォーマット
             console.log(`GENSHIN_${eventType} ${eventId}:`, details);
         }
     }
-    
-    // ナビゲーションログをダンプする関数（デバッグ用）
-    window.dumpNavigationLog = function(eventTypeFilter = null) {
-        let filteredLog = navigationEventLog;
-        
-        if (eventTypeFilter) {
-            filteredLog = navigationEventLog.filter(entry => 
-                entry.eventType.includes(eventTypeFilter)
-            );
-            console.log(`[GENSHIN] フィルタ適用: ${eventTypeFilter} (${filteredLog.length}件)`);
-        } else {
-            console.log(`[GENSHIN] 全ログ表示 (${filteredLog.length}件)`);
-        }
-        
-        console.table(filteredLog);
-        return filteredLog;
-    };
-    
-    // セッションIDでログをフィルタ
-    window.filterLogBySession = function(targetSessionId = null) {
-        const target = targetSessionId || sessionId;
-        const filtered = navigationEventLog.filter(entry => entry.sessionId === target);
-        console.log(`[GENSHIN] セッションIDフィルタ: ${target} (${filtered.length}件)`);
-        console.table(filtered);
-        return filtered;
-    };
-    
-    // イベントタイプでログをフィルタ
-    window.filterLogByEventType = function(eventTypes) {
-        const types = Array.isArray(eventTypes) ? eventTypes : [eventTypes];
-        const filtered = navigationEventLog.filter(entry => 
-            types.some(type => entry.eventType.includes(type))
-        );
-        console.log(`[GENSHIN] イベントタイプフィルタ: ${types.join(', ')} (${filtered.length}件)`);
-        console.table(filtered);
-        return filtered;
-    };
-    
-    // 時系列でログを表示（最新N件）
-    window.getRecentLogs = function(count = 10) {
-        const recent = navigationEventLog.slice(-count);
-        console.log(`[GENSHIN] 最新${count}件のログ:`);
-        console.table(recent);
-        return recent;
-    };
-    
-    // popstate関連のログのみ表示
-    window.getPopstateLogs = function() {
-        return window.filterLogByEventType(['POPSTATE']);
-    };
-    
-    // 現在の状態をダンプする関数（デバッグ用）
-    window.dumpCurrentState = function() {
-        const state = {
-            sessionId,
-            currentEventId: `event_${eventCounter.toString().padStart(4, '0')}`,
-            isInitialized,
-            isDrawing,
-            isNavigationIntensive,
-            currentUrl: window.location.href,
-            isArtifactPage: isArtifactPage(),
-            hasRelicList: !!document.querySelector(SELECTORS.RELIC_LIST),
-            hasSubProps: !!document.querySelector(SELECTORS.SUB_PROPS_PROP_LIST),
-            hasBasicInfo: !!document.querySelector(SELECTORS.BASIC_INFO),
-            scoreElementExists: !!document.getElementById(MY_ID),
-            totalEvents: eventCounter
-        };
-        console.log('[GENSHIN] 現在の状態:', state);
-        return state;
-    };
     
     // オリジナルページの要素セレクタ（クラス名変更時はここを修正）
     const SELECTORS = Object.freeze({
