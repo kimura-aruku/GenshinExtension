@@ -40,7 +40,9 @@ class PageLocaleManager {
                 statCritDMG: 'CRIT DMG',
                 statElementalMastery: 'Elemental Mastery',
                 statEnergyRecharge: 'Energy Recharge',
-                noArtifactsEquipped: 'No Artifacts equipped'
+                noArtifactsEquipped: 'No Artifacts equipped',
+                subtotalScoreLabel: 'Subtotal Score',
+                excessScoreLabel: 'Excess Score'
             },
             ja: {
                 setupKeywordHighlightedStats: 'ハイライトされたステータス',
@@ -61,7 +63,9 @@ class PageLocaleManager {
                 statCritDMG: '会心ダメージ',
                 statElementalMastery: '元素熟知',
                 statEnergyRecharge: '元素チャージ効率',
-                noArtifactsEquipped: '聖遺物を装備していません'
+                noArtifactsEquipped: '聖遺物を装備していません',
+                subtotalScoreLabel: '小計スコア',
+                excessScoreLabel: '超過スコア'
             }
         };
     }

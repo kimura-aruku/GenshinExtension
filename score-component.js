@@ -74,7 +74,7 @@ class ScoreComponent {
 
 
         // スコアデータを更新
-        this.updateScores(scoreElement, scoreList, scoreInfo);
+        this.updateScores(scoreElement, scoreList, scoreInfo, pageLocaleManager);
 
         // スタイルを適用
         this.applyStyles(scoreElement, styleManager);
@@ -88,8 +88,9 @@ class ScoreComponent {
      * @param {HTMLElement} element - スコア表示要素
      * @param {number[]} scoreList - 5つの聖遺物のスコア配列
      * @param {Object} scoreInfo - スコア情報（元のスコア、削減情報など）
+     * @param {PageLocaleManager} pageLocaleManager - 言語管理インスタンス
      */
-    updateScores(element, scoreList, scoreInfo = null) {
+    updateScores(element, scoreList, scoreInfo = null, pageLocaleManager = null) {
         // 合計スコアを計算
         const totalScore = scoreList.reduce((sum, score) => sum + Number(score), 0);
 
@@ -106,9 +107,18 @@ class ScoreComponent {
             const displayReductionTotal = Number(scoreInfo.reductionTotal.toFixed(2));
             const displayAdjustedTotal = Number((displayOriginalTotal - displayReductionTotal).toFixed(2));
             
-            if (subtotalLabelElement) subtotalLabelElement.textContent = '小計スコア';
+            // 多言語対応のラベル取得
+            let subtotalLabel = '小計スコア';
+            let excessLabel = '超過スコア';
+            
+            if (pageLocaleManager) {
+                subtotalLabel = pageLocaleManager.getMessage('subtotalScoreLabel') || '小計スコア';
+                excessLabel = pageLocaleManager.getMessage('excessScoreLabel') || '超過スコア';
+            }
+            
+            if (subtotalLabelElement) subtotalLabelElement.textContent = subtotalLabel;
             if (subtotalElement) subtotalElement.textContent = displayOriginalTotal.toFixed(2);
-            if (overLabelElement) overLabelElement.textContent = '超過スコア';
+            if (overLabelElement) overLabelElement.textContent = excessLabel;
             if (overElement) overElement.textContent = displayReductionTotal.toFixed(2);
             if (totalScoreElement) totalScoreElement.textContent = displayAdjustedTotal.toFixed(2);
         } else {
