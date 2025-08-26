@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MY_ID = EXTENSION_CONFIG.ELEMENT_ID;
     
     // デバッグ・ログ機能の設定
-    const DEBUG_MODE = false; // デバッグモード（本番時はfalseに変更）
+    const DEBUG_MODE = true; // デバッグモード（パフォーマンス改善検証中）
     let eventCounter = 0; // イベント固有ID用のカウンタ
     
     // 重複実行防止用のフラグ
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             eventCounter++;
             const eventId = `event_${eventCounter.toString().padStart(4, '0')}`;
             // コンソールフィルタ用のシンプルなフォーマット
-            console.log(`GENSHIN_${eventType} ${eventId}:`, details);
+            console.log(`GENSHIN_SCORE_${eventType} ${eventId}:`, details);
         }
     }
     
@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 追加ステータス要素の監視
                 if (observer === this.subPropsObserver && 
                     (mutation.type === 'childList' || mutation.type === 'attributes')) {
+                    console.log('GENSHIN_SCORE_HIGHLIGHTED_STATS_CHANGED: ハイライトするステータスの変更を検知');
                     reDraw();
                     return;
                 }
@@ -207,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // キャラクター基本情報の監視
                 if (observer === this.basicInfoObserver && 
                     mutation.type === 'attributes') {
+                    console.log('GENSHIN_SCORE_CHARACTER_CHANGED: キャラクター変更を検知');
                     reDraw();
                     return;
                 }
@@ -393,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // SPA遷移・状態管理
     let isInitialized = false;
+    let isInitializing = false; // 初期化中フラグ（重複防止用）
     let periodicCheckInterval = null;
     let navigationCheckInterval = null;
     let lastKnownState = {
@@ -400,6 +403,11 @@ document.addEventListener('DOMContentLoaded', () => {
         hasSubProps: false,
         hasBasicInfo: false
     };
+    
+    // イベント発火制御用（デバウンス/スロットリング）
+    let spaNavigationTimeout = null;
+    let spaNavigationThrottle = false;
+    let lastSPANavigationTime = 0;
 
     // 要素が画面に表示されている
     function isElementVisible(element) {
@@ -538,8 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500); // 500ms間隔で高速チェック
     }
 
-    // 定期的な要素存在チェック
-    // ナビゲーション検知用の状態変数
+    // 最適化された定期チェック（ナビゲーション集中モードを簡素化）
     let isNavigationIntensive = false;
     let navigationIntensiveTimeout = null;
     
@@ -554,25 +561,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 聖遺物ページから離脱した場合
                 if (!currentState.isArtifactPage && isInitialized) {
-                    console.log('Left artifact page, cleaning up...');
+                    console.log('GENSHIN_SCORE_PERIODIC_CLEANUP: 定期チェックで離脱検知、クリーンアップ');
                     cleanup();
                     return;
                 }
                 
                 // 聖遺物ページに戻った/状態が変化した場合
-                if (currentState.isArtifactPage && (!isInitialized || hasPageStateChanged(currentState))) {
-                    console.log('Artifact page detected or state changed, reinitializing...');
+                if (currentState.isArtifactPage && (!isInitialized && !isInitializing) && hasPageStateChanged(currentState)) {
+                    console.log('GENSHIN_SCORE_PERIODIC_REINITIALIZE: 定期チェックで状態変化検知、再初期化');
                     await reinitialize();
                 }
                 
                 lastKnownState = currentState;
             } catch (error) {
-                console.error('Error in periodic check:', error);
+                console.error('GENSHIN_SCORE_PERIODIC_ERROR:', error);
             }
-        }, isNavigationIntensive ? 100 : 3000); // ナビゲーション中は100ms、通常は3秒
+        }, isNavigationIntensive ? 500 : 3000); // ナビゲーション中は500ms、通常は3秒（最適化）
     }
     
-    // ナビゲーション集中モードを開始（高頻度チェック）
+    // 最適化されたナビゲーション集中モード（期間短縮）
     function startNavigationIntensiveMode() {
         logNavigationEvent('NAVIGATION_INTENSIVE_START', 'Starting intensive monitoring mode');
         isNavigationIntensive = true;
@@ -580,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 既存のタイマーをクリアして新しい間隔で再開
         startPeriodicCheck();
         
-        // 5秒後にナビゲーション集中モードを終了
+        // 2秒後にナビゲーション集中モードを終了（最適化）
         if (navigationIntensiveTimeout) {
             clearTimeout(navigationIntensiveTimeout);
         }
@@ -589,65 +596,79 @@ document.addEventListener('DOMContentLoaded', () => {
             logNavigationEvent('NAVIGATION_INTENSIVE_END', 'Ending intensive monitoring mode');
             isNavigationIntensive = false;
             startPeriodicCheck(); // 通常間隔に戻す
-        }, 5000);
+        }, 2000); // 5秒から2秒に短縮
     }
 
-    // SPA遷移検知時のハンドラ
+    // SPA遷移検知時のハンドラ（デバウンス付き）
     async function handleSPANavigation() {
+        const currentTime = Date.now();
+        
+        // スロットリング：200ms以内の連続呼び出しを無視
+        if (spaNavigationThrottle || (currentTime - lastSPANavigationTime) < 200) {
+            logNavigationEvent('SPA_NAVIGATION_THROTTLED', 'SPA navigation throttled');
+            return;
+        }
+        
+        // 既存のタイマーをクリア（デバウンス）
+        if (spaNavigationTimeout) {
+            clearTimeout(spaNavigationTimeout);
+        }
+        
         logNavigationEvent('SPA_NAVIGATION_DETECTED', 'SPA navigation handler called');
         
-        // ナビゲーション集中モードを開始
-        startNavigationIntensiveMode();
-        
-        try {
-            const currentState = getCurrentPageState();
-            
-            if (currentState.isArtifactPage) {
-                // 聖遺物ページに遷移した場合は再初期化
-                logNavigationEvent('REINITIALIZE', '聖遺物ページで再初期化');
-                await reinitialize();
-            } else {
-                // 他のページに遷移した場合はクリーンアップ
-                logNavigationEvent('CLEANUP', '非聖遺物ページでクリーンアップ');
-                cleanup();
+        // 100ms後に実際の処理を実行（デバウンス）
+        spaNavigationTimeout = setTimeout(async () => {
+            try {
+                spaNavigationThrottle = true;
+                lastSPANavigationTime = Date.now();
                 
-                // DOM読み込み待ちのため遅延再チェックを実行（重複防止）
-                if (!pendingDelayedCheck) {
-                    pendingDelayedCheck = true;
-                    setTimeout(async () => {
-                        const delayedState = getCurrentPageState();
-                        if (delayedState.isArtifactPage && !isInitialized) {
-                            logNavigationEvent('DELAYED_REINITIALIZE', '遅延チェックで聖遺物ページを検知、再初期化');
-                            await reinitialize();
-                        } else if (delayedState.isArtifactPage && isInitialized) {
-                            logNavigationEvent('DELAYED_SKIP', '既に初期化済みのためスキップ');
-                        }
-                        pendingDelayedCheck = false;
-                    }, 100);
-                }
+                // ナビゲーション集中モードを開始
+                startNavigationIntensiveMode();
                 
-                // さらに確実にするため500ms後にも再チェック（重複防止）
-                if (!pendingFinalCheck) {
-                    pendingFinalCheck = true;
-                    setTimeout(async () => {
-                        const finalState = getCurrentPageState();
-                        if (finalState.isArtifactPage && !isInitialized) {
-                            logNavigationEvent('FINAL_REINITIALIZE', '最終チェックで聖遺物ページを検知、再初期化');
-                            await reinitialize();
-                        } else if (finalState.isArtifactPage && isInitialized) {
-                            logNavigationEvent('FINAL_SKIP', '既に初期化済みのためスキップ');
-                        }
-                        pendingFinalCheck = false;
-                    }, 500);
+                const currentState = getCurrentPageState();
+                
+                if (currentState.isArtifactPage) {
+                    // 既に初期化済みかつ初期化中でなければスキップ
+                    if (isInitialized && !isInitializing) {
+                        logNavigationEvent('SPA_NAVIGATION_SKIP', '既に初期化済みのためスキップ');
+                        return;
+                    }
+                    // 聖遺物ページに遷移した場合は再初期化
+                    logNavigationEvent('REINITIALIZE', '聖遺物ページで再初期化');
+                    await reinitialize();
+                } else {
+                    // 他のページに遷移した場合はクリーンアップ
+                    logNavigationEvent('CLEANUP', '非聖遺物ページでクリーンアップ');
+                    cleanup();
+                    
+                    // 単一の遅延チェック（重複防止を統合）
+                    if (!pendingDelayedCheck) {
+                        pendingDelayedCheck = true;
+                        setTimeout(async () => {
+                            const delayedState = getCurrentPageState();
+                            if (delayedState.isArtifactPage && !isInitialized && !isInitializing) {
+                                logNavigationEvent('DELAYED_REINITIALIZE', '遅延チェックで聖遺物ページを検知、再初期化');
+                                await reinitialize();
+                            }
+                            pendingDelayedCheck = false;
+                        }, 300); // 単一の遅延時間に統合
+                    }
                 }
+            } catch (error) {
+                logNavigationEvent('SPA_NAVIGATION_ERROR', error.message);
+            } finally {
+                // 500ms後にスロットリングを解除
+                setTimeout(() => {
+                    spaNavigationThrottle = false;
+                }, 500);
             }
-        } catch (error) {
-            logNavigationEvent('SPA_NAVIGATION_ERROR', error.message);
-        }
+        }, 100);
     }
 
-    // クリーンアップ処理
+    // クリーンアップ処理（最適化版）
     function cleanup() {
+        console.log('GENSHIN_SCORE_CLEANUP_START: クリーンアップ開始');
+        
         // スコア表示要素を削除
         const existingElement = document.getElementById(MY_ID);
         if (existingElement) {
@@ -672,24 +693,48 @@ document.addEventListener('DOMContentLoaded', () => {
             navigationCheckInterval = null;
         }
         
+        // SPAナビゲーション関連のタイマーをクリア
+        if (spaNavigationTimeout) {
+            clearTimeout(spaNavigationTimeout);
+            spaNavigationTimeout = null;
+        }
+        
         isInitialized = false;
+        isInitializing = false;
+        console.log('GENSHIN_SCORE_CLEANUP_COMPLETE: クリーンアップ完了');
     }
 
-    // 再初期化処理
+    // 再初期化処理（重複防止付き）
     async function reinitialize() {
-        console.log('Reinitializing extension...');
+        // 重複防止：既に初期化中または初期化済みの場合はスキップ
+        if (isInitializing || isInitialized) {
+            console.log('GENSHIN_SCORE_REINITIALIZE_SKIP: 初期化中または初期化済みのためスキップ');
+            return;
+        }
         
-        // 既存の要素をクリーンアップ
-        cleanup();
+        console.log('GENSHIN_SCORE_REINITIALIZE_START: 再初期化開始');
+        isInitializing = true;
         
-        // 短い遅延後に初期化を試行
-        setTimeout(async () => {
-            try {
-                await firstDraw();
-            } catch (error) {
-                console.error('Failed to reinitialize:', error);
-            }
-        }, 500);
+        try {
+            // 既存の要素をクリーンアップ
+            cleanup();
+            
+            // 短い遅延後に初期化を試行
+            setTimeout(async () => {
+                try {
+                    await firstDraw();
+                    console.log('GENSHIN_SCORE_REINITIALIZE_COMPLETE: 再初期化完了');
+                } catch (error) {
+                    console.error('GENSHIN_SCORE_REINITIALIZE_ERROR:', error);
+                    isInitialized = false;
+                } finally {
+                    isInitializing = false;
+                }
+            }, 300); // 遅延時間を短縮
+        } catch (error) {
+            console.error('GENSHIN_SCORE_REINITIALIZE_ERROR:', error);
+            isInitializing = false;
+        }
     }
 
     // 聖遺物未装備かどうかをチェックする関数
@@ -1005,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 描画
     async function draw(){
+        console.log('GENSHIN_SCORE_DRAW_START: 描画開始');
         // 既に描画中の場合はスキップ
         if (isDrawing) {
             return;
@@ -1052,11 +1098,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // 描画完了フラグをリセット
             isDrawing = false;
+            console.log('GENSHIN_SCORE_DRAW_END: 描画完了');
         }
     }
 
     // 非同期処理を分離
     async function reDraw() {
+        console.log('GENSHIN_SCORE_REDRAW_START: 再描画開始');
         // 聖遺物リスト要素の再取得
         if (!isElementVisible(relicListElement)) {
             relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST, null, checkNoArtifactsEquipped);
@@ -1186,8 +1234,17 @@ document.addEventListener('DOMContentLoaded', () => {
         observerManager.startObserving(subPropListElement, basicInfoElement, languageSelectorElement);
     }
 
-    // スコア要素作成
+    // スコア要素作成（重複防止付き）
     async function firstDraw(){
+        // 重複防止：既に初期化中または初期化済みの場合はスキップ
+        if (isInitializing || isInitialized) {
+            console.log('GENSHIN_SCORE_INITIAL_LOAD_SKIP: 既に初期化中または初期化済みのためスキップ');
+            return;
+        }
+        
+        console.log('GENSHIN_SCORE_INITIAL_LOAD: 最初の描画を開始');
+        isInitializing = true;
+        
         try {
             await setup();
             await draw();
@@ -1195,14 +1252,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 初期化完了後の状態を記録
             lastKnownState = getCurrentPageState();
+            console.log('GENSHIN_SCORE_INITIAL_LOAD_COMPLETE: 初期化完了');
         } catch (error) {
-            console.error(pageLocaleManager.getMessage('errorGeneral'), error);
+            console.error('GENSHIN_SCORE_INITIAL_LOAD_ERROR:', error);
             isInitialized = false;
+        } finally {
+            isInitializing = false;
         }
     }
 
     // カスタムイベントリスナー（設定変更時の再描画用）
     document.addEventListener('genshin-method-changed', async (event) => {
+        console.log('GENSHIN_SCORE_METHOD_CHANGED_EVENT: カスタムイベント（設定変更）による再描画');
         try {
             await draw();
         } catch (error) {
@@ -1212,6 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 目標チャージ効率変更時の再描画用イベントリスナー
     document.addEventListener('target-er-changed', async (event) => {
+        console.log('GENSHIN_SCORE_TARGET_ER_CHANGED_EVENT: 目標チャージ効率変更による再描画');
         try {
             await draw();
         } catch (error) {
@@ -1232,6 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 計算方式変更のハンドラ
     async function handleCalculationMethodChange(newMethod) {
+        console.log(`GENSHIN_SCORE_CALCULATION_METHOD_CHANGED: 計算方式変更 -> ${newMethod}`);
         try {
             // 設定を更新
             updateCalculationMethod(newMethod);
@@ -1255,6 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 目標チャージ効率表示設定変更のハンドラ
     async function handleTargetERDisplayChange(enabled) {
+        console.log(`GENSHIN_SCORE_TARGET_ER_DISPLAY_CHANGED: 目標チャージ効率表示設定変更 -> ${enabled}`);
         try {
             // 目標チャージ効率コンポーネントの表示・非表示を切り替え
             targetERComponent.setEnabled(enabled);
@@ -1276,36 +1340,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // SPA遷移対応のイベントリスナー設定
     
-    // 強化されたpopstate検知（複数の優先度とタイミングで検知）
-    
-    // 高優先度popstateリスナー（capture phase, 即座に反応）
+    // 最適化されたpopstate検知（シングルハンドラ）
     window.addEventListener('popstate', async () => {
-        logNavigationEvent('POPSTATE_HIGH_PRIORITY', 'Capture phase popstate detected');
-        await handleSPANavigation();
-    }, { capture: true, passive: false });
-    
-    // 標準popstateリスナー（bubble phase, 通常の反応）
-    window.addEventListener('popstate', async () => {
-        logNavigationEvent('POPSTATE_STANDARD', 'Bubble phase popstate detected');
+        logNavigationEvent('POPSTATE_DETECTED', 'Popstate event detected');
         await handleSPANavigation();
     }, { passive: false });
-    
-    // 遅延popstateリスナー（他の処理完了後に確実に実行）
-    window.addEventListener('popstate', async () => {
-        logNavigationEvent('POPSTATE_DELAYED', 'Delayed popstate detected, scheduling checks');
-        
-        // 50ms後に実行（HoYoLABの処理完了を待つ）
-        setTimeout(async () => {
-            logNavigationEvent('POPSTATE_DELAYED_50MS', 'Executing delayed 50ms check');
-            await handleSPANavigation();
-        }, 50);
-        
-        // 200ms後にも実行（確実性を高める）
-        setTimeout(async () => {
-            logNavigationEvent('POPSTATE_DELAYED_200MS', 'Executing delayed 200ms check');
-            await handleSPANavigation();
-        }, 200);
-    });
     
     // 追加のナビゲーション検知イベント
     
@@ -1355,26 +1394,16 @@ document.addEventListener('DOMContentLoaded', () => {
         history.pushState = function(state, title, url) {
             logNavigationEvent('PUSHSTATE', { state, title, url });
             const result = originalPushState.apply(this, arguments);
-            
-            // pushState後に遅延実行でSPA遷移処理
-            setTimeout(async () => {
-                logNavigationEvent('PUSHSTATE_DELAYED', 'Executing delayed navigation check');
-                await handleSPANavigation();
-            }, 100);
-            
+            // デバウンス付きhandleSPANavigationで処理される
+            handleSPANavigation();
             return result;
         };
         
         history.replaceState = function(state, title, url) {
             logNavigationEvent('REPLACESTATE', { state, title, url });
             const result = originalReplaceState.apply(this, arguments);
-            
-            // replaceState後に遅延実行でSPA遷移処理
-            setTimeout(async () => {
-                logNavigationEvent('REPLACESTATE_DELAYED', 'Executing delayed navigation check');
-                await handleSPANavigation();
-            }, 100);
-            
+            // デバウンス付きhandleSPANavigationで処理される
+            handleSPANavigation();
             return result;
         };
         
@@ -1384,10 +1413,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // フォーカス復帰時のチェック（他タブから戻った時など）
     window.addEventListener('focus', async () => {
         if (isInitialized && !isArtifactPage()) {
-            console.log('Focus returned but not on artifact page, cleaning up');
+            console.log('GENSHIN_SCORE_FOCUS_CLEANUP: フォーカス復帰時に非聖遺物ページでクリーンアップ');
             cleanup();
         } else if (!isInitialized && isArtifactPage()) {
-            console.log('Focus returned to artifact page, reinitializing');
+            console.log('GENSHIN_SCORE_FOCUS_REINITIALIZE: フォーカス復帰時に聖遺物ページで再初期化');
             await reinitialize();
         }
     });
