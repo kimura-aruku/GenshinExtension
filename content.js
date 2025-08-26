@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MY_ID = EXTENSION_CONFIG.ELEMENT_ID;
     
     // デバッグ・ログ機能の設定
-    const DEBUG_MODE = true; // デバッグモード（パフォーマンス改善検証中）
+    const DEBUG_MODE = false; // デバッグモード（本番時はfalseに変更）
     let eventCounter = 0; // イベント固有ID用のカウンタ
     
     // 重複実行防止用のフラグ
@@ -186,11 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         /**
-         * 監視コールバック
+         * 監視コールバック（初期化時の発火制御付き）
          * @param {MutationRecord[]} mutationsList - 変更リスト
          * @param {MutationObserver} observer - 監視オブジェクト
          */
         handleMutations(mutationsList, observer) {
+            // 初期化中または初期セットアップ未完成時は無視
+            if (isInitializing || !initialSetupComplete) {
+                return;
+            }
+            
             for (let mutation of mutationsList) {
                 // 自分の要素の変更は無視
                 if (mutation.target.id === MY_ID) {
@@ -200,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 追加ステータス要素の監視
                 if (observer === this.subPropsObserver && 
                     (mutation.type === 'childList' || mutation.type === 'attributes')) {
-                    console.log('GENSHIN_SCORE_HIGHLIGHTED_STATS_CHANGED: ハイライトするステータスの変更を検知');
                     reDraw();
                     return;
                 }
@@ -208,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // キャラクター基本情報の監視
                 if (observer === this.basicInfoObserver && 
                     mutation.type === 'attributes') {
-                    console.log('GENSHIN_SCORE_CHARACTER_CHANGED: キャラクター変更を検知');
                     reDraw();
                     return;
                 }
@@ -408,6 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let spaNavigationTimeout = null;
     let spaNavigationThrottle = false;
     let lastSPANavigationTime = 0;
+    
+    // 初期化時のMutationObserver発火制御用
+    let initialSetupComplete = false;
+    let initialSetupTimeout = null;
 
     // 要素が画面に表示されている
     function isElementVisible(element) {
@@ -561,20 +568,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // 聖遺物ページから離脱した場合
                 if (!currentState.isArtifactPage && isInitialized) {
-                    console.log('GENSHIN_SCORE_PERIODIC_CLEANUP: 定期チェックで離脱検知、クリーンアップ');
                     cleanup();
                     return;
                 }
                 
                 // 聖遺物ページに戻った/状態が変化した場合
                 if (currentState.isArtifactPage && (!isInitialized && !isInitializing) && hasPageStateChanged(currentState)) {
-                    console.log('GENSHIN_SCORE_PERIODIC_REINITIALIZE: 定期チェックで状態変化検知、再初期化');
                     await reinitialize();
                 }
                 
                 lastKnownState = currentState;
             } catch (error) {
-                console.error('GENSHIN_SCORE_PERIODIC_ERROR:', error);
+                console.error('Error in periodic check:', error);
             }
         }, isNavigationIntensive ? 500 : 3000); // ナビゲーション中は500ms、通常は3秒（最適化）
     }
@@ -602,6 +607,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // SPA遷移検知時のハンドラ（デバウンス付き）
     async function handleSPANavigation() {
         const currentTime = Date.now();
+        
+        // 初期化中または初期セットアップ未完了時はSPA遷移検知を無視
+        if (isInitializing || !initialSetupComplete) {
+            logNavigationEvent('SPA_NAVIGATION_IGNORED_INITIALIZING', 'SPA navigation ignored during initialization');
+            return;
+        }
         
         // スロットリング：200ms以内の連続呼び出しを無視
         if (spaNavigationThrottle || (currentTime - lastSPANavigationTime) < 200) {
@@ -667,7 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // クリーンアップ処理（最適化版）
     function cleanup() {
-        console.log('GENSHIN_SCORE_CLEANUP_START: クリーンアップ開始');
         
         // スコア表示要素を削除
         const existingElement = document.getElementById(MY_ID);
@@ -699,20 +709,23 @@ document.addEventListener('DOMContentLoaded', () => {
             spaNavigationTimeout = null;
         }
         
+        // 初期セットアップ関連のタイマーをクリア
+        if (initialSetupTimeout) {
+            clearTimeout(initialSetupTimeout);
+            initialSetupTimeout = null;
+        }
+        
         isInitialized = false;
         isInitializing = false;
-        console.log('GENSHIN_SCORE_CLEANUP_COMPLETE: クリーンアップ完了');
+        initialSetupComplete = false;
     }
 
     // 再初期化処理（重複防止付き）
     async function reinitialize() {
         // 重複防止：既に初期化中または初期化済みの場合はスキップ
         if (isInitializing || isInitialized) {
-            console.log('GENSHIN_SCORE_REINITIALIZE_SKIP: 初期化中または初期化済みのためスキップ');
             return;
         }
-        
-        console.log('GENSHIN_SCORE_REINITIALIZE_START: 再初期化開始');
         isInitializing = true;
         
         try {
@@ -723,16 +736,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(async () => {
                 try {
                     await firstDraw();
-                    console.log('GENSHIN_SCORE_REINITIALIZE_COMPLETE: 再初期化完了');
                 } catch (error) {
-                    console.error('GENSHIN_SCORE_REINITIALIZE_ERROR:', error);
+                    console.error('Failed to reinitialize:', error);
                     isInitialized = false;
                 } finally {
                     isInitializing = false;
                 }
             }, 300); // 遅延時間を短縮
         } catch (error) {
-            console.error('GENSHIN_SCORE_REINITIALIZE_ERROR:', error);
+            console.error('Failed to reinitialize:', error);
             isInitializing = false;
         }
     }
@@ -1050,7 +1062,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 描画
     async function draw(){
-        console.log('GENSHIN_SCORE_DRAW_START: 描画開始');
         // 既に描画中の場合はスキップ
         if (isDrawing) {
             return;
@@ -1098,13 +1109,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // 描画完了フラグをリセット
             isDrawing = false;
-            console.log('GENSHIN_SCORE_DRAW_END: 描画完了');
         }
     }
 
     // 非同期処理を分離
     async function reDraw() {
-        console.log('GENSHIN_SCORE_REDRAW_START: 再描画開始');
         // 聖遺物リスト要素の再取得
         if (!isElementVisible(relicListElement)) {
             relicListElement = await observerManager.waitForElement(SELECTORS.RELIC_LIST, null, checkNoArtifactsEquipped);
@@ -1230,19 +1239,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // キャラ情報要素取得
         basicInfoElement = await observerManager.waitForElement(SELECTORS.BASIC_INFO);
-        // 変更監視開始
+        // 変更監視開始（初期セットアップ完了フラグを立てる）
         observerManager.startObserving(subPropListElement, basicInfoElement, languageSelectorElement);
+        
+        // 1000ms後に初期セットアップ完了フラグを立てる（DOM構築完了待ち）
+        if (initialSetupTimeout) {
+            clearTimeout(initialSetupTimeout);
+        }
+        initialSetupTimeout = setTimeout(() => {
+            initialSetupComplete = true;
+        }, 1000); // 500msから1000msに延長（初期化完全待ち）
     }
 
     // スコア要素作成（重複防止付き）
     async function firstDraw(){
         // 重複防止：既に初期化中または初期化済みの場合はスキップ
         if (isInitializing || isInitialized) {
-            console.log('GENSHIN_SCORE_INITIAL_LOAD_SKIP: 既に初期化中または初期化済みのためスキップ');
             return;
         }
-        
-        console.log('GENSHIN_SCORE_INITIAL_LOAD: 最初の描画を開始');
         isInitializing = true;
         
         try {
@@ -1252,9 +1266,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 初期化完了後の状態を記録
             lastKnownState = getCurrentPageState();
-            console.log('GENSHIN_SCORE_INITIAL_LOAD_COMPLETE: 初期化完了');
         } catch (error) {
-            console.error('GENSHIN_SCORE_INITIAL_LOAD_ERROR:', error);
+            console.error('Failed to initialize:', error);
             isInitialized = false;
         } finally {
             isInitializing = false;
@@ -1263,7 +1276,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // カスタムイベントリスナー（設定変更時の再描画用）
     document.addEventListener('genshin-method-changed', async (event) => {
-        console.log('GENSHIN_SCORE_METHOD_CHANGED_EVENT: カスタムイベント（設定変更）による再描画');
         try {
             await draw();
         } catch (error) {
@@ -1273,7 +1285,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 目標チャージ効率変更時の再描画用イベントリスナー
     document.addEventListener('target-er-changed', async (event) => {
-        console.log('GENSHIN_SCORE_TARGET_ER_CHANGED_EVENT: 目標チャージ効率変更による再描画');
         try {
             await draw();
         } catch (error) {
@@ -1294,7 +1305,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 計算方式変更のハンドラ
     async function handleCalculationMethodChange(newMethod) {
-        console.log(`GENSHIN_SCORE_CALCULATION_METHOD_CHANGED: 計算方式変更 -> ${newMethod}`);
         try {
             // 設定を更新
             updateCalculationMethod(newMethod);
@@ -1318,7 +1328,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 目標チャージ効率表示設定変更のハンドラ
     async function handleTargetERDisplayChange(enabled) {
-        console.log(`GENSHIN_SCORE_TARGET_ER_DISPLAY_CHANGED: 目標チャージ効率表示設定変更 -> ${enabled}`);
         try {
             // 目標チャージ効率コンポーネントの表示・非表示を切り替え
             targetERComponent.setEnabled(enabled);
@@ -1413,10 +1422,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // フォーカス復帰時のチェック（他タブから戻った時など）
     window.addEventListener('focus', async () => {
         if (isInitialized && !isArtifactPage()) {
-            console.log('GENSHIN_SCORE_FOCUS_CLEANUP: フォーカス復帰時に非聖遺物ページでクリーンアップ');
             cleanup();
         } else if (!isInitialized && isArtifactPage()) {
-            console.log('GENSHIN_SCORE_FOCUS_REINITIALIZE: フォーカス復帰時に聖遺物ページで再初期化');
             await reinitialize();
         }
     });
