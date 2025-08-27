@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(/D:\\010_Document\\Code_Library\\_ゲーム以外的自作\\chrome拡張\\GenshinExtension\\GenshinExtension/**)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
