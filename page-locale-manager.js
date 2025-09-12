@@ -48,7 +48,7 @@ class PageLocaleManager {
         // 言語別メッセージ定義（chrome.i18nの代替）
         this.messages = {
             '简': {
-                setupKeywordHighlightedStats: '已标记的推荐属性',
+                setupKeywordHighlightedStats: '标记的推荐属性由玩家自定义',
                 setupKeywordFirstAccess: '首次访问时',
                 setupKeywordAdditionalStats: '追加属性',
                 errorGeneral: '错误:',
@@ -68,10 +68,12 @@ class PageLocaleManager {
                 statEnergyRecharge: '元素充能效率',
                 noArtifactsEquipped: '未装备圣遗物',
                 subtotalScoreLabel: '小计分数',
-                excessScoreLabel: '超出分数'
+                excessScoreLabel: '超出分数',
+                targetEnergyRecharge: '目标元素充能效率:',
+                save: '保存'
             },
             '繁': {
-                setupKeywordHighlightedStats: '已標記的推薦屬性',
+                setupKeywordHighlightedStats: '標記的推薦屬性由玩家自訂',
                 setupKeywordFirstAccess: '首次存取時',
                 setupKeywordAdditionalStats: '追加屬性',
                 errorGeneral: '錯誤:',
@@ -91,10 +93,12 @@ class PageLocaleManager {
                 statEnergyRecharge: '元素充能效率',
                 noArtifactsEquipped: '未裝備聖遺物',
                 subtotalScoreLabel: '小計分數',
-                excessScoreLabel: '超出分數'
+                excessScoreLabel: '超出分數',
+                targetEnergyRecharge: '目標元素充能效率:',
+                save: '保存'
             },
             'DE': {
-                setupKeywordHighlightedStats: 'Die markierten empfohlenen Affixe',
+                setupKeywordHighlightedStats: 'Die empfohlenen Attribute, die hervorgehoben sind',
                 setupKeywordFirstAccess: 'Beim ersten Zugriff',
                 setupKeywordAdditionalStats: 'Bonusattribut',
                 errorGeneral: 'Fehler:',
@@ -114,7 +118,9 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Aufladerate',
                 noArtifactsEquipped: 'Keine Artefakte ausgerüstet',
                 subtotalScoreLabel: 'Zwischensumme Punkte',
-                excessScoreLabel: 'Überschuss Punkte'
+                excessScoreLabel: 'Überschuss Punkte',
+                targetEnergyRecharge: 'Ziel-Aufladerate:',
+                save: 'Speichern'
             },
             'EN': {
                 setupKeywordHighlightedStats: 'The marked recommended affixes',
@@ -137,10 +143,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Energy Recharge',
                 noArtifactsEquipped: 'No Artifacts equipped',
                 subtotalScoreLabel: 'Subtotal Score',
-                excessScoreLabel: 'Excess Score'
+                excessScoreLabel: 'Excess Score',
+                targetEnergyRecharge: 'Target Energy Recharge:',
+                save: 'Save'
             },
             'ES': {
-                setupKeywordHighlightedStats: 'Los afijos recomendados marcados',
+                setupKeywordHighlightedStats: 'Los atributos recomendados marcados han sido personalizados por los jugadores',
                 setupKeywordFirstAccess: 'Cuando accedes por primera vez',
                 setupKeywordAdditionalStats: 'Atributos secundarios',
                 errorGeneral: 'Error:',
@@ -160,10 +168,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Recarga de Energía',
                 noArtifactsEquipped: 'No hay artefactos equipados',
                 subtotalScoreLabel: 'Subtotal puntuación',
-                excessScoreLabel: 'Puntuación excedente'
+                excessScoreLabel: 'Puntuación excedente',
+                targetEnergyRecharge: 'Recarga de Energía Objetivo:',
+                save: 'Guardar'
             },
             'FR': {
-                setupKeywordHighlightedStats: 'Les affixes recommandés marqués',
+                setupKeywordHighlightedStats: 'Les attributs recommandés marqués sont personnalisés par les joueurs',
                 setupKeywordFirstAccess: 'Lors de votre première entrée',
                 setupKeywordAdditionalStats: 'Attributs bonus',
                 errorGeneral: 'Erreur:',
@@ -174,7 +184,7 @@ class PageLocaleManager {
                 statHP: 'PV',
                 statHPPercent: 'Pourcentage de PV',
                 statATK: 'ATQ',
-                statATKPercent: 'Pourcentage d\'ATQ',
+                statATKPercent: 'Pourcentage de ATQ',
                 statDEF: 'DÉF',
                 statDEFPercent: 'Pourcentage de DÉF',
                 statCritRate: 'Taux CRIT',
@@ -183,10 +193,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Recharge d\'énergie',
                 noArtifactsEquipped: 'Aucun artefact équipé',
                 subtotalScoreLabel: 'Score sous-total',
-                excessScoreLabel: 'Score excédentaire'
+                excessScoreLabel: 'Score excédentaire',
+                targetEnergyRecharge: 'Recharge d\'énergie cible:',
+                save: 'Enregistrer'
             },
             'ID': {
-                setupKeywordHighlightedStats: 'Afiks yang direkomendasikan dan ditandai',
+                setupKeywordHighlightedStats: 'Rekomendasi Stats yang ditandai dapat diatur pemain',
                 setupKeywordFirstAccess: 'Saat pertama kali masuk',
                 setupKeywordAdditionalStats: 'Stats Sekunder',
                 errorGeneral: 'Error:',
@@ -206,15 +218,17 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Energy Recharge',
                 noArtifactsEquipped: 'Tidak ada Artifact yang dilengkapi',
                 subtotalScoreLabel: 'Subtotal Skor',
-                excessScoreLabel: 'Skor Berlebih'
+                excessScoreLabel: 'Skor Berlebih',
+                targetEnergyRecharge: 'Target Energy Recharge:',
+                save: 'Simpan'
             },
             'IT': {
-                setupKeywordHighlightedStats: 'Gli affissi consigliati contrassegnati',
+                setupKeywordHighlightedStats: 'I modificatori consigliati evidenziati sono personalizzati dal giocatore',
                 setupKeywordFirstAccess: 'Quando entri per la prima volta',
-                setupKeywordAdditionalStats: 'Affissi minori',
+                setupKeywordAdditionalStats: 'Modificatori secondari',
                 errorGeneral: 'Errore:',
                 errorScoreElementNotFound: 'Elemento di visualizzazione del punteggio non trovato',
-                scoreDescription: 'I punteggi sono calcolati dagli affissi minori.',
+                scoreDescription: 'I punteggi sono calcolati dagli modificatori secondari.',
                 totalScore: 'Punteggio totale',
                 itemScore: 'Punteggio',
                 statHP: 'PS',
@@ -229,7 +243,9 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Ricarica di energia',
                 noArtifactsEquipped: 'Nessun artefatto equipaggiato',
                 subtotalScoreLabel: 'Punteggio subtotale',
-                excessScoreLabel: 'Punteggio in eccesso'
+                excessScoreLabel: 'Punteggio in eccesso',
+                targetEnergyRecharge: 'Ricarica di energia obiettivo:',
+                save: 'Salva'
             },
             'JP': {
                 setupKeywordHighlightedStats: 'ハイライトされたステータス',
@@ -252,10 +268,12 @@ class PageLocaleManager {
                 statEnergyRecharge: '元素チャージ効率',
                 noArtifactsEquipped: '聖遺物を装備していません',
                 subtotalScoreLabel: '小計スコア',
-                excessScoreLabel: '超過スコア'
+                excessScoreLabel: '超過スコア',
+                targetEnergyRecharge: '目標チャージ効率:',
+                save: '保存'
             },
             'KR': {
-                setupKeywordHighlightedStats: '표시된 권장 옵션',
+                setupKeywordHighlightedStats: '태그된 추천 속성은 플레이어가 직접 설정한 것입니다',
                 setupKeywordFirstAccess: '처음 접속했을 때',
                 setupKeywordAdditionalStats: '부가 속성',
                 errorGeneral: '오류:',
@@ -275,10 +293,12 @@ class PageLocaleManager {
                 statEnergyRecharge: '원소 충전 효율',
                 noArtifactsEquipped: '성유물을 장착하지 않음',
                 subtotalScoreLabel: '소계 점수',
-                excessScoreLabel: '초과 점수'
+                excessScoreLabel: '초과 점수',
+                targetEnergyRecharge: '목표 원소 충전 효율:',
+                save: '저장'
             },
             'PT': {
-                setupKeywordHighlightedStats: 'Os afixos recomendados marcados',
+                setupKeywordHighlightedStats: 'Os atributos recomendados marcados são personalizados pelo jogador',
                 setupKeywordFirstAccess: 'Quando você entra pela primeira vez',
                 setupKeywordAdditionalStats: 'Atributo de Bônus',
                 errorGeneral: 'Erro:',
@@ -298,10 +318,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Recarga de Energia',
                 noArtifactsEquipped: 'Nenhum artefato equipado',
                 subtotalScoreLabel: 'Subtotal da pontuação',
-                excessScoreLabel: 'Pontuação excedente'
+                excessScoreLabel: 'Pontuação excedente',
+                targetEnergyRecharge: 'Recarga de Energia Alvo:',
+                save: 'Salvar'
             },
             'RU': {
-                setupKeywordHighlightedStats: 'Отмеченные рекомендуемые аффиксы',
+                setupKeywordHighlightedStats: 'Выделены атрибуты, устанавливаемые игроком',
                 setupKeywordFirstAccess: 'При первом входе',
                 setupKeywordAdditionalStats: 'Дополнительные атрибуты',
                 errorGeneral: 'Ошибка:',
@@ -312,19 +334,21 @@ class PageLocaleManager {
                 statHP: 'HP',
                 statHPPercent: 'Процент HP',
                 statATK: 'Сила атаки',
-                statATKPercent: 'Процент силы атаки',
+                statATKPercent: 'Процент Сила атаки',
                 statDEF: 'Защита',
-                statDEFPercent: 'Процент защиты',
+                statDEFPercent: 'Процент Защита',
                 statCritRate: 'Шанс крит. попадания',
                 statCritDMG: 'Крит. урон',
                 statElementalMastery: 'Мастерство стихий',
                 statEnergyRecharge: 'Восстановление энергии',
                 noArtifactsEquipped: 'Артефакты не экипированы',
                 subtotalScoreLabel: 'Промежуточный счёт',
-                excessScoreLabel: 'Избыточный счёт'
+                excessScoreLabel: 'Избыточный счёт',
+                targetEnergyRecharge: 'Целевое восстановление энергии:',
+                save: 'Сохранить'
             },
             'TH': {
-                setupKeywordHighlightedStats: 'Affix ที่แนะนำที่ถูกทำเครื่องหมาย',
+                setupKeywordHighlightedStats: 'สถานะแนะนำที่ทำเครื่องหมายไว้จะถูกกำหนดโดยผู้เล่น',
                 setupKeywordFirstAccess: 'เมื่อคุณเข้ามาครั้งแรก',
                 setupKeywordAdditionalStats: 'โบนัสค่าสถานะ',
                 errorGeneral: 'ข้อผิดพลาด:',
@@ -344,10 +368,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'ประสิทธิภาพการฟื้นฟูพลังงานธาตุ',
                 noArtifactsEquipped: 'ไม่ได้สวมใส่สิ่งประดิษฐ์',
                 subtotalScoreLabel: 'คะแนนย่อย',
-                excessScoreLabel: 'คะแนนส่วนเกิน'
+                excessScoreLabel: 'คะแนนส่วนเกิน',
+                targetEnergyRecharge: 'ประสิทธิภาพการฟื้นฟูพลังงานธาตุเป้าหมาย:',
+                save: 'บันทึก'
             },
             'TR': {
-                setupKeywordHighlightedStats: 'İşaretlenmiş önerilen eklentiler',
+                setupKeywordHighlightedStats: 'İşaretli önerilen özellikler kişiselleştirilebilir',
                 setupKeywordFirstAccess: 'İlk kez girdiğinizde',
                 setupKeywordAdditionalStats: 'Alt Özellik',
                 errorGeneral: 'Hata:',
@@ -367,10 +393,12 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Enerji Yüklemesi',
                 noArtifactsEquipped: 'Hiçbir eser donatılmadı',
                 subtotalScoreLabel: 'Ara toplam skor',
-                excessScoreLabel: 'Aşırı skor'
+                excessScoreLabel: 'Aşırı skor',
+                targetEnergyRecharge: 'Hedef Enerji Yüklemesi:',
+                save: 'Kaydet'
             },
             'VN': {
-                setupKeywordHighlightedStats: 'Các từ tố được đánh dấu khuyến nghị',
+                setupKeywordHighlightedStats: 'Thuộc tính đề xuất được đánh dấu cho người chơi tùy chỉnh',
                 setupKeywordFirstAccess: 'Khi bạn vào lần đầu tiên',
                 setupKeywordAdditionalStats: 'Thuộc Tính Thêm',
                 errorGeneral: 'Lỗi:',
@@ -390,7 +418,9 @@ class PageLocaleManager {
                 statEnergyRecharge: 'Hiệu Quả Nạp Nguyên Tố',
                 noArtifactsEquipped: 'Không trang bị hiện vật nào',
                 subtotalScoreLabel: 'Điểm tạm tính',
-                excessScoreLabel: 'Điểm thừa'
+                excessScoreLabel: 'Điểm thừa',
+                targetEnergyRecharge: 'Hiệu Quả Nạp Nguyên Tố Mục Tiêu:',
+                save: 'Lưu'
             }
         };
     }

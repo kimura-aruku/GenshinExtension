@@ -185,22 +185,8 @@ class TargetERComponent {
         
         i18nElements.forEach(element => {
             const key = element.getAttribute('data-i18n');
-            if (key === 'targetEnergyRecharge') {
-                // 多言語対応
-                const messages = {
-                    'ja': '目標チャージ効率:',
-                    'en': 'Target Energy Recharge:'
-                };
-                const currentLang = pageLocaleManager.currentPageLocale || 'ja';
-                element.textContent = messages[currentLang] || messages['ja'];
-            } else if (key === 'save') {
-                const messages = {
-                    'ja': '保存',
-                    'en': 'Save'
-                };
-                const currentLang = pageLocaleManager.currentPageLocale || 'ja';
-                element.textContent = messages[currentLang] || messages['ja'];
-            }
+            // PageLocaleManagerからメッセージを取得
+            element.textContent = pageLocaleManager.getMessage(key);
         });
     }
     
